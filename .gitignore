@@ -1,0 +1,71 @@
+# Python cache / environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+env/
+
+# Node
+node_modules/
+
+# Flask / local runtime
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Build / packaged app output
+build/
+dist/
+*.exe
+*.spec
+
+# Logs
+*.log
+logs/
+
+# Local/generated data
+data/
+exports/
+backups/
+workspace/
+reference_exports/
+search_index/
+index/
+indexes/
+*.idx
+*.fts
+*.whoosh/
+
+# Local config / secrets
+.env
+.env.*
+config.local.py
+settings.local.py
+
+# Office / document files - do not commit County/SOP materials
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.pdf
+
+# Images/screenshots - block accidental sensitive screenshots for now
+*.png
+*.jpg
+*.jpeg
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Accidental command artifacts
+cd
+pip
+python
+taskkill
+deactivate

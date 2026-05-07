@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .search-summary-card {
+        background: #ffffff;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        padding: 18px;
+        min-height: 220px;
+    }
+
+    .search-summary-title {
+        color: #526173;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+    }
+
+    .summary-empty {
+        color: #4f5f72;
+        font-size: 15px;
+    }
+
+    .summary-selected-file {
+        font-size: 12px;
+        color: #5f6b7a;
+        margin-bottom: 10px;
+        word-break: break-all;
+    }
+
+    .summary-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .summary-actions button {
+        border: 0;
+        border-radius: 6px;
+        padding: 8px 10px;
+        cursor: pointer;
+        background: #eef2ff;
+        color: #2636c9;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .summary-actions button:hover {
+        background: #dfe5ff;
+    }
+
+    .summary-output {
+        min-height: 180px;
+        max-height: 320px;
+        overflow: auto;
+        white-space: pre-wrap;
+        font-family: Consolas, monospace;
+        font-size: 12px;
+        background: #f6f8fa;
+        border: 1px solid #d8dee4;
+        border-radius: 6px;
+        padding: 10px;
+    }
+</style>
+
+<div class="container mx-auto mt-6 max-w-6xl">
+    <h1 class="text-2xl font-bold mb-4">Search Hub</h1>
+
+    <!-- SETTINGS -->
+    <div class="flex items-center gap-2 mb-4">
+        <input type="checkbox" id="autoOpenToggle" class="form-checkbox">
+        <label for="autoOpenToggle" class="text-sm text-gray-700">
+            Auto-open on pin
+        </label>
+    </div>
+
+    <!-- REINDEX -->
+    <div class="mb-4">
+        <button id="reindexBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            Rebuild File Index
+        </button>
+        <span id="reindexStatus" class="ml-3 text-sm font-semibold text-gray-700"></span>
+    </div>
+
+    {% if first_time %}
+    <div class="bg-yellow-100 text-yellow-800 p-3 rounded mb-4 border">
+        🔍 First time here?<br>
+        <strong>Your file index is empty.</strong><br>
+        Click <strong>Rebuild File Index</strong> to enable fast search.
+    </div>
+    {% endif %}
+
+    <!-- SEARCH BAR -->
+    <div class="flex gap-3 mb-2">
+        <input id="searchInput" type="text" placeholder="Search by document type, keyword, or scenario..."
+            class="border p-3 flex-grow rounded w-full">
+
+        <button id="searchBtn" class="bg-blue-600 text-white px-5 py-2 rounded">
+            Search
+        </button>
+    </div>
+
+    <p class="text-gray-500 text-sm mb-6">
+        Search across files and parceling examples to find the correct action.
+    </p>
+
+    <!-- SELECTED FILE SUMMARY -->
+    <div id="selectedFileSummaryRoot" class="search-summary-card mb-6">
+        <div class="search-summary-title">Selected File Summary</div>
+
+        <div id="searchSummaryEmpty" class="summary-empty">
+            Select a related file to summarize it.
+        </div>
+
+        <div id="searchSummaryPanel" style="display: none;">
+            <div id="searchSummarySelectedFile" class="summary-selected-file"></div>
+
+            <div class="summary-actions">
+                <button type="button" id="searchSummarizeFileBtn">
+                    Summarize File
+                </button>
+
+                <button type="button" id="searchExtractDetailsBtn">
+                    Extract APNs / DRNs / Dates
+                </button>
+
+                <button type="button" id="searchCopySummaryBtn">
+                    Copy Summary
+                </button>
+            </div>
+
+            <pre id="searchSummaryOutput" class="summary-output">No summary loaded.</pre>
+        </div>
+    </div>
+
+    <!-- RESULTS ROOT -->
+    <div id="resultsContainer" class="space-y-4"></div>
+</div>
+
+<!-- ========================= -->
+<!-- SINGLE INIT BLOCK (CRITICAL) -->
+<!-- ========================= -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+
+        // =========================
+        // AUTO OPEN TOGGLE
+        // =========================
+        const toggle = document.getElementById("autoOpenToggle");
+        const saved = localStorage.getItem("autoOpen");
+
+        if (saved === "1") toggle.checked = true;
+
+        toggle.addEventListener("change", () => {
+            localStorage.setItem("autoOpen", toggle.checked ? "1" : "0");
+        });
+
+        // =========================
+        // CLEAR INPUT ON LOAD
+        // =========================
+        const input = document.getElementById("searchInput");
+        if (input) input.value = "";
+
+        // =========================
+        // REINDEX BUTTON (SAFE BIND)
+        // =========================
+        const reindexBtn = document.getElementById("reindexBtn");
+
+        if (reindexBtn) {
+            reindexBtn.addEventListener("click", async () => {
+                const status = document.getElementById("reindexStatus");
+                status.textContent = "Rebuilding index... Please wait.";
+
+                try {
+                    const resp = await fetch("/reindex", { method: "POST" });
+                    const data = await resp.json();
+
+                    if (data.success) {
+                        status.textContent = "Index rebuilt successfully! Refreshing...";
+                        setTimeout(() => window.location.reload(), 1200);
+                    } else {
+                        status.textContent = "Error rebuilding index.";
+                    }
+                } catch (err) {
+                    console.error(err);
+                    status.textContent = "Unexpected error.";
+                }
+            });
+        }
+
+        // =========================
+        // SEARCH HUB FILE SUMMARY
+        // =========================
+        let selectedFilePath = null;
+        let lastSummaryText = "";
+
+        const summaryEmpty = document.getElementById("searchSummaryEmpty");
+        const summaryPanel = document.getElementById("searchSummaryPanel");
+        const selectedFileLabel = document.getElementById("searchSummarySelectedFile");
+        const summaryOutput = document.getElementById("searchSummaryOutput");
+        const summarizeBtn = document.getElementById("searchSummarizeFileBtn");
+        const extractBtn = document.getElementById("searchExtractDetailsBtn");
+        const copyBtn = document.getElementById("searchCopySummaryBtn");
+
+        document.addEventListener("click", (event) => {
+            const fileItem = event.target.closest("[data-file-path]");
+
+            if (!fileItem) {
+                return;
+            }
+
+            selectedFilePath = fileItem.getAttribute("data-file-path");
+
+            if (!selectedFilePath) {
+                return;
+            }
+
+            showSelectedFile(selectedFilePath);
+        });
+
+        if (summarizeBtn) {
+            summarizeBtn.addEventListener("click", () => {
+                requestFileSummary("summary");
+            });
+        }
+
+        if (extractBtn) {
+            extractBtn.addEventListener("click", () => {
+                requestFileSummary("details");
+            });
+        }
+
+        if (copyBtn) {
+            copyBtn.addEventListener("click", copySummaryToClipboard);
+        }
+
+        function showSelectedFile(filePath) {
+            if (summaryEmpty) {
+                summaryEmpty.style.display = "none";
+            }
+
+            if (summaryPanel) {
+                summaryPanel.style.display = "block";
+            }
+
+            if (selectedFileLabel) {
+                selectedFileLabel.textContent = filePath;
+            }
+
+            if (summaryOutput) {
+                summaryOutput.textContent = "File selected. Click Summarize File.";
+            }
+        }
+
+        async function requestFileSummary(mode) {
+            if (!summaryOutput) {
+                return;
+            }
+
+            if (!selectedFilePath) {
+                summaryOutput.textContent = "Select a file first.";
+                return;
+            }
+
+            summaryOutput.textContent = "Extracting local file information...";
+
+            try {
+                const response = await fetch(`/file-summary?path=${encodeURIComponent(selectedFilePath)}`);
+                const data = await response.json();
+
+                if (!response.ok || !data.ok) {
+                    summaryOutput.textContent = data.error || "Unable to summarize this file.";
+                    return;
+                }
+
+                lastSummaryText = mode === "details"
+                    ? formatExtractedDetails(data)
+                    : formatFullSummary(data);
+
+                summaryOutput.textContent = lastSummaryText;
+            } catch (error) {
+                summaryOutput.textContent = `Unable to summarize file locally: ${error}`;
+            }
+        }
+
+        function formatFullSummary(data) {
+            const lines = [];
+
+            lines.push("Selected File Summary");
+            lines.push("=====================");
+            lines.push(`File: ${data.file_name || ""}`);
+            lines.push(`Type: ${data.file_type || ""}`);
+            lines.push(`Source: ${data.source_path || ""}`);
+            lines.push("");
+
+            lines.push("What this appears to be:");
+            lines.push(data.what_this_appears_to_be || "No classification available.");
+            lines.push("");
+
+            lines.push("Summary:");
+            lines.push(data.summary || "No summary available.");
+
+            appendList(lines, "Detected Sheets / Pages / Sections", data.detected_sections);
+            appendList(lines, "Possible APNs", data.possible_apns);
+            appendList(lines, "Possible DRNs", data.possible_drns);
+            appendList(lines, "Possible Dates", data.possible_dates);
+
+            if (data.possible_keywords && data.possible_keywords.length) {
+                lines.push("");
+                lines.push("Possible Mapping Keywords:");
+                lines.push(data.possible_keywords.join(", "));
+            }
+
+            appendList(lines, "Extracted Preview", data.preview_lines);
+
+            lines.push("");
+            lines.push("Review note:");
+            lines.push("This was generated locally from extracted text. Verify against the original file before using it for parceling, APN, DRN, or legal description work.");
+
+            return lines.join("\n");
+        }
+
+        function formatExtractedDetails(data) {
+            const lines = [];
+
+            lines.push("Extracted Key Details");
+            lines.push("=====================");
+            lines.push(`File: ${data.file_name || ""}`);
+            lines.push("");
+
+            appendList(lines, "Possible APNs", data.possible_apns);
+            appendList(lines, "Possible DRNs", data.possible_drns);
+            appendList(lines, "Possible Dates", data.possible_dates);
+
+            if (data.possible_keywords && data.possible_keywords.length) {
+                lines.push("");
+                lines.push("Possible Mapping Keywords:");
+                lines.push(data.possible_keywords.join(", "));
+            }
+
+            if (lines.length <= 4) {
+                lines.push("No APNs, DRNs, dates, or Mapping keywords were detected from the extracted text.");
+            }
+
+            return lines.join("\n");
+        }
+
+        function appendList(lines, title, items) {
+            if (!items || !items.length) {
+                return;
+            }
+
+            lines.push("");
+            lines.push(`${title}:`);
+
+            items.forEach((item) => {
+                lines.push(`- ${item}`);
+            });
+        }
+
+        function copySummaryToClipboard() {
+            if (!lastSummaryText) {
+                return;
+            }
+
+            navigator.clipboard.writeText(lastSummaryText);
+        }
+
+    });
+</script>
+
+<!-- ========================= -->
+<!-- SEARCH ENGINE (LOAD ONCE ONLY) -->
+<!-- ========================= -->
+<script src="/static/js/search_assistant.js?v=4"></script>
+
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Mapping Division Knowledge Hub{% endblock %}
+
+{% block content %}
+
+<div class="p-6">
+
+  <!-- Header -->
+  <h1 class="text-gray-700 text-sm tracking-wide font-semibold uppercase">
+    Orange County Assessor — Mapping Division
+  </h1>
+
+  <h2 class="text-3xl font-bold mt-1">
+    Mapping Division Knowledge Hub
+  </h2>
+
+  <p class="text-gray-600 mt-2">
+    Centralized procedures, visuals, and training resources.
+  </p>
+
+  <!-- MAIN NAV CARDS -->
+  <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <div class="p-5 border rounded shadow bg-white hover:shadow-md cursor-pointer"
+         onclick="location.href='/reference';">
+      <h3 class="font-bold mb-1 text-blue-700">📚 Reference Library</h3>
+      <p class="text-gray-600 text-sm">
+        Pin frequently used documents and notes for quick access.
+      </p>
+    </div>
+
+    <div class="p-5 border rounded shadow bg-white hover:shadow-md cursor-pointer"
+         onclick="location.href='/search-hub';">
+      <h3 class="font-bold mb-1 text-blue-700">🔍 Search Hub</h3>
+      <p class="text-gray-600 text-sm">
+        Search across all Q:\WORD files by name or inside content.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- RECENTLY VIEWED WIDGET -->
+  <div class="mt-10">
+    <h2 class="text-xl font-bold mb-4">Recently Viewed</h2>
+
+    {% if recent %}
+      <div class="space-y-3">
+        {% for item in recent %}
+          <div class="p-3 bg-white shadow rounded border hover:bg-gray-50 flex items-center justify-between">
+
+            <!-- LEFT SIDE -->
+            <div class="cursor-pointer open-file"
+                 data-path="{{ item.file_path }}">
+              <div class="font-semibold">{{ item.file_name }}</div>
+              <div class="text-sm text-gray-500">{{ item.folder }}</div>
+            </div>
+
+            <!-- RIGHT SIDE: PIN STAR -->
+            <span class="pin-star cursor-pointer text-2xl ml-4"
+                  data-id="{{ item.id }}"
+                  data-name="{{ item.file_name }}"
+                  data-path="{{ item.file_path }}"
+                  data-folder="{{ item.folder }}">
+
+              {% if item.ref_id %}
+                ★
+              {% else %}
+                ☆
+              {% endif %}
+
+            </span>
+
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-gray-500 text-sm">No recent files yet.</p>
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock %}

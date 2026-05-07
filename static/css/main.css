@@ -1,0 +1,71 @@
+body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: #f6f8fb;
+    color: #222;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 230px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: white;
+    border-right: 1px solid #ddd;
+    padding: 20px;
+}
+
+.sidebar a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 5px;
+    color: #0070ee;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.sidebar a:hover {
+    text-decoration: underline;
+}
+
+/* CONTENT AREA */
+.content {
+    margin-left: 260px;
+    padding: 40px;
+}
+
+/* TABLES */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    text-align: left;
+    padding: 10px;
+    background: #f0f3f8;
+    font-weight: 600;
+    border-bottom: 2px solid #d9d9d9;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #e6e6e6;
+}
+
+tr:hover {
+    background: #f5f8ff;
+}
+
+/* PIN ICON */
+.pin-btn {
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.pinned {
+    color: gold;
+}

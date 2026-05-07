@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-2xl font-bold mb-6">Reference Library</h1>
+
+<div class="flex items-center gap-3 mb-4">
+    <input id="refSearch" type="text" placeholder="Search your reference library..." class="border p-2 rounded flex-1">
+
+    <button id="addGroupBtn" class="bg-green-600 text-white px-3 py-2 rounded">
+        + Add New Group
+    </button>
+
+    <button id="exportBtn" class="bg-blue-600 text-white px-3 py-2 rounded">
+        ⬇ Export
+    </button>
+
+    <button id="importBtn" class="bg-purple-600 text-white px-3 py-2 rounded">
+        ⬆ Import
+    </button>
+</div>
+
+<script>
+    const CUSTOM_GROUPS = {{ custom_groups | tojson }};
+</script>
+
+{% set built_in = ["Ungrouped", "Procedures", "Parcel Maps", "Cut Sheets", "Tracts", "General"] %}
+
+{% if grouped|length == 0 %}
+
+<p>No pinned references yet.</p>
+
+{% else %}
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-6">
+
+    <!-- LEFT: REFERENCE TABLE -->
+    <div class="xl:col-span-2">
+
+        <div class="bg-white border rounded shadow-sm overflow-hidden">
+            <table class="reference-table w-full border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 border-b text-left">
+                        <th class="p-2 w-16">Pin</th>
+                        <th class="p-2 w-24">Open</th>
+                        <th class="p-2">Display Name</th>
+                        <th class="p-2 w-48">Group</th>
+                        <th class="p-2">Notes</th>
+                    </tr>
+                </thead>
+
+                {% for group, items in grouped.items() %}
+
+                <!-- GROUP HEADER -->
+                <tbody class="group-header-section">
+                    <tr class="group-header bg-gray-200 cursor-pointer border-b" data-group="{{ group }}">
+                        <td colspan="5" class="p-2">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <span class="group-arrow">▼</span>
+                                    <span>{{ group }} ({{ items|length }} items)</span>
+                                </div>
+
+                                {% if group not in built_in %}
+                                <button class="delete-group text-red-500 hover:text-red-700 text-lg" type="button"
+                                    data-group-name="{{ group }}">
+                                    🗑
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+
+                <!-- GROUP BODY -->
+                <tbody class="group-body" id="group-body-{{ group.replace(' ', '-') }}" data-group="{{ group }}">
+
+                    {% for item in items %}
+                    <tr class="item-row ref-row border-b hover:bg-gray-50" id="row-{{ item.id }}"
+                        data-name="{{ item.display_name or item.file_name }}" data-notes="{{ item.notes or '' }}"
+                        data-file="{{ item.file_name }}">
+
+                        <!-- PIN -->
+                        <td class="p-2 text-center">
+                            <span class="pin-star cursor-pointer text-xl text-yellow-500" data-id="{{ item.id }}"
+                                data-name="{{ item.file_name }}" data-path="{{ item.file_path }}"
+                                data-folder="{{ item.folder }}">
+                                {{ "★" if item.pinned else "☆" }}
+                            </span>
+                        </td>
+
+                        <!-- OPEN -->
+                        <td class="p-2 text-center whitespace-nowrap">
+                            <button type="button" class="open-file text-blue-600 text-xl" data-path="{{ item.file_path }}"
+                                title="Open original file">
+                                📄
+                            </button>
+                        
+                            <button type="button" class="open-folder text-gray-600 text-xl ml-2" data-path="{{ item.file_path }}"
+                                title="Open containing folder">
+                                📂
+                            </button>
+                        
+                            <button type="button" class="copy-workspace text-green-700 text-xl ml-2" data-path="{{ item.file_path }}"
+                                data-name="{{ item.file_name }}" data-group="{{ item.group or 'Ungrouped' }}" title="Copy to My Workspace">
+                                📥
+                            </button>
+                        </td>
+
+                        <!-- DISPLAY NAME -->
+                        <td class="p-2">
+                            <input class="display-input border w-full p-1 rounded" data-id="{{ item.id }}"
+                                value="{{ item.display_name or item.file_name }}">
+                        </td>
+
+                        <!-- GROUP -->
+                        <td class="p-2">
+                            <select class="group-select border w-full p-1 rounded" data-id="{{ item.id }}">
+
+                                {% for g in built_in %}
+                                <option value="{{ g }}" {% if item.group==g %}selected{% endif %}>
+                                    {{ g }}
+                                </option>
+                                {% endfor %}
+
+                                {% for g in custom_groups if g not in built_in %}
+                                <option value="{{ g }}" {% if item.group==g %}selected{% endif %}>
+                                    {{ g }}
+                                </option>
+                                {% endfor %}
+
+                            </select>
+                        </td>
+
+                        <!-- NOTES -->
+                        <td class="p-2">
+                            <textarea class="note-input border w-full p-1 rounded" data-id="{{ item.id }}"
+                                rows="2">{{ item.notes }}</textarea>
+                        </td>
+
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+
+                {% endfor %}
+
+            </table>
+        </div>
+
+    </div>
+
+    <!-- RIGHT: PREVIEW PANEL -->
+    <div id="referencePreview"
+        class="p-4 border rounded bg-white shadow-sm h-[calc(100vh-180px)] overflow-auto sticky top-6 self-start">
+    
+        <div class="text-sm text-gray-500 mb-2">
+            DOCUMENT PREVIEW
+        </div>
+    
+        <div class="text-gray-400 text-sm">
+            Click a file to preview
+        </div>
+    
+    </div>
+
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/reference.js') }}?v=20010"></script>
+<script src="{{ url_for('static', filename='js/reference_autosave.js') }}?v=1"></script>
+
+{% endblock %}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}SOP Hub{% endblock %}</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="bg-gray-100 text-gray-900 font-sans flex">
+
+  <aside class="w-64 bg-white h-screen shadow p-4 space-y-4">
+    <div class="flex items-center gap-2">
+      <img src="{{ url_for('static', filename='img/orange_county_logo.png') }}" class="h-10" alt="OC Logo">
+      <h1 class="text-lg font-bold leading-tight">OC Assessor</h1>
+    </div>
+
+    <nav class="space-y-2">
+      <a href="/" class="block text-blue-700 font-medium hover:underline">🏠 Home</a>
+      <a href="/reference" class="block text-blue-700 hover:underline">📚 Reference Library</a>
+      <a href="/search-hub" class="block text-blue-700 hover:underline">🔍 Search Hub</a>
+    </nav>
+  </aside>
+
+  <main class="flex-1 p-6">
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+
+</html>

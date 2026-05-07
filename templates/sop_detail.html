@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">SOP Library</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ sop.title }}</li>
+    </ol>
+  </nav>
+
+  <h2 class="mb-1">{{ sop.title }}</h2>
+  <p><strong>Last Updated:</strong> {{ sop.last_updated }}</p>
+  <p><strong>Maintained By:</strong> {{ sop.maintained_by }}</p>
+  <p><strong>Tags:</strong> {{ sop.tags | join(', ') }}</p>
+
+  <hr />
+
+  <h4>📘 Purpose</h4>
+  <p>{{ sop.purpose }}</p>
+
+  <h4 class="mt-4">✅ Required Steps</h4>
+  <ol>
+    {% for step in sop.steps %}
+      <li>{{ step }}</li>
+    {% endfor %}
+  </ol>
+
+  {% if sop.notes %}
+    <h4 class="mt-4">📝 Additional Notes</h4>
+    <p>{{ sop.notes }}</p>
+  {% endif %}
+
+  {% if sop.visual %}
+    <h4 class="mt-4">🗺️ Visual Example</h4>
+    <img src="{{ url_for('static', filename='images/' + sop.visual) }}" class="img-fluid" alt="Visual Example">
+  {% endif %}
+</div>
+{% endblock %}
