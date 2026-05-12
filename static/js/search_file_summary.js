@@ -48,7 +48,12 @@
     }
 
     if (selectedLabel) {
-      selectedLabel.textContent = filePath || "No file selected";
+      const fileName = filePath
+        ? filePath.split(/[\\/]/).pop()
+        : "No file selected";
+
+      selectedLabel.textContent = fileName;
+      selectedLabel.title = filePath || "";
     }
 
     if (output) {
@@ -81,6 +86,12 @@
         return;
       }
 
+      if (data.supported === false) {
+        lastSummaryText = formatUnsupportedSummary(data);
+        output.textContent = lastSummaryText;
+        return;
+      }
+
       lastSummaryText =
         mode === "details"
           ? formatExtractedDetails(data)
@@ -90,6 +101,31 @@
     } catch (error) {
       output.textContent = `Unable to summarize file locally: ${error}`;
     }
+  }
+
+  function formatUnsupportedSummary(data) {
+    const lines = [];
+
+    lines.push("Selected File Summary");
+    lines.push("=====================");
+    lines.push(`File: ${data.file_name || ""}`);
+    lines.push(`Type: ${data.file_type || ""}`);
+    lines.push(`Source: ${data.source_path || ""}`);
+    lines.push("");
+
+    lines.push("Summary unavailable:");
+    lines.push(
+      data.error ||
+        "This file type cannot be summarized locally in the current phase.",
+    );
+
+    lines.push("");
+    lines.push("Review note:");
+    lines.push(
+      "Verify against the original file before using for parceling, APN, DRN, legal description, or Mapping production work.",
+    );
+
+    return lines.join("\n");
   }
 
   function formatFullSummary(data) {
@@ -129,7 +165,7 @@
     lines.push("");
     lines.push("Review note:");
     lines.push(
-      "This was generated locally from extracted text. Verify against the original file before using it for parceling, APN, DRN, or legal description work.",
+      "Verify against the original file before using for parceling, APN, DRN, legal description, or Mapping production work.",
     );
 
     return lines.join("\n");
@@ -152,6 +188,11 @@
       lines.push("Possible Mapping Keywords:");
       lines.push(data.possible_keywords.join(", "));
     }
+
+    lines.push("");
+    lines.push(
+      "Verify against the original file before using for parceling, APN, DRN, legal description, or Mapping production work.",
+    );
 
     return lines.join("\n");
   }
