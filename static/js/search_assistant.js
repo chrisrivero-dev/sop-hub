@@ -50,6 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadPreview(path) {
     const previewPanel = document.getElementById("previewPanel");
+
     if (!previewPanel || !path) {
       return;
     }
@@ -102,17 +103,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderRecommendedAction(examples) {
     if (!examples.length) {
-      return `
-        <div class="p-4 border rounded bg-white shadow-sm">
-          <div class="text-sm text-gray-500 mb-2">RECOMMENDED ACTION</div>
-          <div class="text-gray-700">No matching examples found.</div>
-        </div>
-      `;
+      return "";
     }
 
     const actions = [
       ...new Set(examples.map((example) => example.action).filter(Boolean)),
     ];
+
+    if (!actions.length) {
+      return "";
+    }
 
     return `
       <div class="p-4 border rounded bg-white shadow-sm">
@@ -180,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return `
       <div id="previewPanel" class="p-4 border rounded bg-white shadow-sm">
         <div class="text-sm text-gray-500 mb-2">DOCUMENT PREVIEW</div>
-        <div class="text-gray-400 text-sm">Hover or select a file to preview</div>
+        <div class="text-gray-400 text-sm">Click Preview on a related file to load a preview.</div>
       </div>
     `;
   }
@@ -249,6 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("PIN ERROR:", error);
     }
   }
+
   function bindEvents() {
     selectedItems = [];
 
