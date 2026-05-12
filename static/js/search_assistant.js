@@ -129,9 +129,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderRelatedFiles(files) {
     let html = `
-    <div class="p-4 border rounded bg-white shadow-sm">
-      <div class="text-sm text-gray-500 mb-2">RELATED FILES</div>
-  `;
+      <div class="p-4 border rounded bg-white shadow-sm">
+        <div class="text-sm text-gray-500 mb-2">RELATED FILES</div>
+    `;
 
     if (!files.length) {
       html += `<div class="text-sm text-gray-500">No related files found.</div>`;
@@ -139,38 +139,40 @@ document.addEventListener("DOMContentLoaded", () => {
       return html;
     }
 
-    files.slice(0, 5).forEach((file) => {
+    html += `<div class="max-h-72 overflow-y-auto">`;
+
+    files.slice(0, 10).forEach((file) => {
       html += `
-      <div class="flex justify-between items-center border-b py-2 gap-3">
-        <a href="#"
-           class="select-file text-blue-700 font-semibold flex-1"
-           data-path="${escapeHtml(file.full_path)}"
-           data-file-path="${escapeHtml(file.full_path)}">
-          ${escapeHtml(file.name)}
-        </a>
+        <div class="flex justify-between items-center border-b py-2 gap-3">
+          <a href="#"
+             class="select-file text-blue-700 font-semibold flex-1"
+             data-path="${escapeHtml(file.full_path)}"
+             data-file-path="${escapeHtml(file.full_path)}">
+            ${escapeHtml(file.name)}
+          </a>
 
-        <a href="#"
-           class="open-file text-xs text-gray-400 hover:text-blue-500 whitespace-nowrap"
-           data-path="${escapeHtml(file.full_path)}"
-           title="Preview / Open">
-          Preview
-        </a>
+          <a href="#"
+             class="open-file text-xs text-gray-400 hover:text-blue-500 whitespace-nowrap"
+             data-path="${escapeHtml(file.full_path)}"
+             title="Preview / Open">
+            Preview
+          </a>
 
-        <button
-          type="button"
-          class="pin-btn text-lg leading-none"
-          data-name="${escapeHtml(file.name)}"
-          data-path="${escapeHtml(file.full_path)}"
-          data-selected="false"
-          title="Add to Reference Library"
-          style="color:#9CA3AF;">
-          ☆
-        </button>
-      </div>
-    `;
+          <button
+            type="button"
+            class="pin-btn text-lg leading-none"
+            data-name="${escapeHtml(file.name)}"
+            data-path="${escapeHtml(file.full_path)}"
+            data-selected="false"
+            title="Add to Reference Library"
+            style="color:#9CA3AF;">
+            ☆
+          </button>
+        </div>
+      `;
     });
 
-    html += `</div>`;
+    html += `</div></div>`;
     return html;
   }
 
