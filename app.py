@@ -11,6 +11,7 @@ from datetime import datetime
 from services.workspace_service import copy_reference_to_workspace
 from services.excel_preview_service import build_excel_preview
 from services.word_preview_service import build_word_preview
+from routes.file_summary_routes import file_summary_bp
 import docx
 import os
 import re
@@ -125,7 +126,7 @@ app = Flask(
     static_folder=static_dir,
     template_folder=template_dir
 )
-
+app.register_blueprint(file_summary_bp)
 # ======================================================
 # PREVIEW SYSTEM (THUMBNAIL-BASED)
 # ======================================================
