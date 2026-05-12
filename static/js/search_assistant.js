@@ -129,9 +129,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderRelatedFiles(files) {
     let html = `
-      <div class="p-4 border rounded bg-white shadow-sm">
-        <div class="text-sm text-gray-500 mb-2">RELATED FILES</div>
-    `;
+    <div class="p-4 border rounded bg-white shadow-sm">
+      <div class="text-sm text-gray-500 mb-2">RELATED FILES</div>
+  `;
 
     if (!files.length) {
       html += `<div class="text-sm text-gray-500">No related files found.</div>`;
@@ -141,26 +141,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
     files.slice(0, 5).forEach((file) => {
       html += `
-        <div class="flex justify-between items-center border-b py-2 gap-3">
-          <a href="#"
-             class="open-file text-blue-700 font-semibold flex-1"
-             data-path="${escapeHtml(file.full_path)}"
-             data-file-path="${escapeHtml(file.full_path)}">
-            ${escapeHtml(file.name)}
-          </a>
+      <div class="flex justify-between items-center border-b py-2 gap-3">
+        <a href="#"
+           class="select-file text-blue-700 font-semibold flex-1"
+           data-path="${escapeHtml(file.full_path)}"
+           data-file-path="${escapeHtml(file.full_path)}">
+          ${escapeHtml(file.name)}
+        </a>
 
-          <button
-            type="button"
-            class="pin-btn text-lg leading-none"
-            data-name="${escapeHtml(file.name)}"
-            data-path="${escapeHtml(file.full_path)}"
-            data-selected="false"
-            title="Add to Reference Library"
-            style="color:#9CA3AF;">
-            ☆
-          </button>
-        </div>
-      `;
+        <a href="#"
+           class="open-file text-xs text-gray-400 hover:text-blue-500 whitespace-nowrap"
+           data-path="${escapeHtml(file.full_path)}"
+           title="Preview / Open">
+          Preview
+        </a>
+
+        <button
+          type="button"
+          class="pin-btn text-lg leading-none"
+          data-name="${escapeHtml(file.name)}"
+          data-path="${escapeHtml(file.full_path)}"
+          data-selected="false"
+          title="Add to Reference Library"
+          style="color:#9CA3AF;">
+          ☆
+        </button>
+      </div>
+    `;
     });
 
     html += `</div>`;
@@ -242,6 +249,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   function bindEvents() {
     selectedItems = [];
+
+    document.querySelectorAll(".select-file").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+      });
+    });
 
     document.querySelectorAll(".open-file").forEach((link) => {
       const path = link.dataset.path;
