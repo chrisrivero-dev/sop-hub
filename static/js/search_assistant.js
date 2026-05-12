@@ -144,7 +144,8 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="flex justify-between items-center border-b py-2 gap-3">
           <a href="#"
              class="open-file text-blue-700 font-semibold flex-1"
-             data-path="${escapeHtml(file.full_path)}">
+             data-path="${escapeHtml(file.full_path)}"
+             data-file-path="${escapeHtml(file.full_path)}">
             ${escapeHtml(file.name)}
           </a>
 
