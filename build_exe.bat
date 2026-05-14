@@ -1,9 +1,25 @@
 @echo off
-echo Building OC SOP Hub EXE...
+echo ================================================
+echo  OC SOP Hub - EXE Build
+echo ================================================
 echo.
 
-pyinstaller --noconfirm --clean --onefile --windowed --name OC_SOP_Hub --add-data "templates;templates" --add-data "static;static" app.py
+echo Cleaning old build artifacts...
+if exist build rmdir /s /q build
+if exist dist  rmdir /s /q dist
+echo Done.
+echo.
+
+echo Running PyInstaller from spec file...
+pyinstaller --noconfirm OC_SOP_Hub.spec
 
 echo.
-echo Build finished.
+echo ================================================
+if exist dist\OC_SOP_Hub.exe (
+    echo  BUILD SUCCEEDED
+    echo  EXE: dist\OC_SOP_Hub.exe
+) else (
+    echo  BUILD FAILED - check output above
+)
+echo ================================================
 pause
