@@ -94,51 +94,75 @@ _DATE_PATTERNS = [
 
 
 # ======================================================
-# MAPPING KEYWORDS
+# MAPPING KEYWORD GROUPS
+# Grouped by workflow topic for structured output.
+# Flat list MAPPING_KEYWORDS is derived from these groups.
 # ======================================================
 
-MAPPING_KEYWORDS = [
-    # Map / instrument types
-    "Parcel Map", "Parcel Merger", "Parcel Split", "Parcel Consolidation",
-    "Tract Map", "Tentative Map", "Final Map", "Subdivision Map",
-    "Record of Survey", "Certificate of Compliance",
-    "Lot Line Adjustment", "LLA", "Notice of Lot Line Adjustment",
-    # Deed / conveyance
-    "Grant Deed", "Quitclaim Deed", "Trust Deed", "Deed of Trust",
-    "Affidavit", "Declaration", "Certificate", "Resolution",
-    "Notice of Completion",
-    # Easement / R-O-W
-    "Easement", "Right of Way", "Right-of-Way", "R/W",
-    "Access Easement", "Drainage Easement", "Utility Easement",
-    "Slope Easement", "Dedication", "Vacation",
-    # Land restructuring
-    "Reversion to Acreage", "Annexation", "Detachment",
-    "Boundary Adjustment",
-    # Condo / planned development
-    "Condominium Plan", "Condo Plan", "CC&R", "Planned Unit Development",
-    # Legal description / survey terms
-    "Legal Description", "Metes and Bounds",
-    "Point of Beginning", "Point of Commencement", "T.P.O.B.",
-    "True Point of Beginning", "Thence", "Bearings",
-    "Northerly", "Southerly", "Easterly", "Westerly",
-    "Monument", "Benchmark", "Control Point",
-    "Section", "Township", "Range", "Meridian",
-    "Lot", "Block", "Tract",
-    # R/T codes
-    "Revenue and Taxation Code", "R&T", "R/T Code",
-    # OC Assessor / ATS internal
-    "ATS", "ArcGIS", "DOC Screening", "Parceling Log",
-    "Type A", "Type B", "Type C", "Type D",
-    "Type E", "Type F", "Type G",
-    # Parcel rules / notes
-    "Parent Parcel", "Child Parcel", "Resulting Parcel",
-    "Merger", "Split", "Remnant",
-    "Tax Default", "Redemption",
-    # Reference indicators
-    "Assessor's Parcel", "APN",
-    "Address Assignment", "Zone Change",
-    "General Plan", "Setback", "Building Line",
-]
+MAPPING_KEYWORD_GROUPS = {
+    "Parcel / Tract Maps": [
+        "Parcel Map", "Parcel Merger", "Parcel Split", "Parcel Consolidation",
+        "Tract Map", "Tentative Map", "Final Map", "Subdivision Map",
+        "Certificate of Compliance", "Notice of Completion",
+        "Parent Parcel", "Child Parcel", "Resulting Parcel", "Remnant",
+    ],
+    "Lot Line Adjustment": [
+        "Lot Line Adjustment", "LLA", "Notice of Lot Line Adjustment",
+        "Boundary Adjustment",
+    ],
+    "Easement / Right-of-Way": [
+        "Easement", "Right of Way", "Right-of-Way", "R/W",
+        "Access Easement", "Drainage Easement", "Utility Easement",
+        "Slope Easement", "Dedication",
+    ],
+    "Abandonment / Vacation": [
+        "Vacation", "Abandonment", "Street Vacation", "Alley Vacation",
+        "Notice of Vacation",
+    ],
+    "Deed / Conveyance": [
+        "Grant Deed", "Quitclaim Deed", "Trust Deed", "Deed of Trust",
+        "Affidavit", "Declaration", "Resolution",
+    ],
+    "Condo / Airspace / Timeshare": [
+        "Condominium Plan", "Condo Plan", "CC&R", "Planned Unit Development",
+        "Airspace Condominium", "Airspace", "Timeshare", "Time Share",
+        "Common Interest", "Common Area",
+    ],
+    "Reversion / Annexation": [
+        "Reversion to Acreage", "Annexation", "Detachment",
+        "Merger", "Split",
+    ],
+    "Legal Description / Survey": [
+        "Legal Description", "Metes and Bounds", "Record of Survey",
+        "Point of Beginning", "Point of Commencement", "T.P.O.B.",
+        "True Point of Beginning", "Thence", "Bearings",
+        "Northerly", "Southerly", "Easterly", "Westerly",
+        "Monument", "Benchmark", "Section", "Township", "Range", "Meridian",
+        "Lot", "Block", "Tract",
+    ],
+    "R/T Code References": [
+        "Revenue and Taxation Code", "R&T", "R/T Code",
+        "Tax Default", "Redemption",
+    ],
+    "ATS / Assessor Workflow": [
+        "ATS", "ArcGIS", "DOC Screening", "Parceling Log",
+        "Type A", "Type B", "Type C", "Type D",
+        "Type E", "Type F", "Type G",
+        "Assessor's Parcel", "APN",
+        "Address Assignment", "Zone Change",
+    ],
+    "SOP / Procedure": [
+        "Standard Operating", "SOP", "Procedure", "Step-by-Step",
+        "QA", "Quality Assurance", "Quality Control", "Review Checklist",
+    ],
+    "General Planning / Zoning": [
+        "General Plan", "Setback", "Building Line",
+        "Zone Change", "Zoning",
+    ],
+}
+
+# Flat list for backward compatibility (used by detect function)
+MAPPING_KEYWORDS = [kw for kws in MAPPING_KEYWORD_GROUPS.values() for kw in kws]
 
 
 # ======================================================
@@ -146,22 +170,54 @@ MAPPING_KEYWORDS = [
 # ======================================================
 
 _CLASSIFICATION_SIGNALS = [
-    ("Parcel Map",                  ["parcel map"]),
-    ("Lot Line Adjustment",         ["lot line adjustment", " lla ", "notice of lot line"]),
-    ("Tract Map / Subdivision",     ["tract map", "final map", "tentative map", "subdivision"]),
-    ("Easement / Right-of-Way",     ["easement", "right of way", "right-of-way", " r/w ", "dedication", "vacation"]),
-    ("Deed",                        ["grant deed", "quitclaim deed", "trust deed", "deed of trust"]),
-    ("Condominium Plan",            ["condominium plan", "condo plan", "cc&r"]),
-    ("Notice of Completion",        ["notice of completion"]),
-    ("Certificate of Compliance",   ["certificate of compliance"]),
-    ("Legal Description / Survey",  ["metes and bounds", "legal description", "record of survey",
-                                     "point of beginning", "thence"]),
-    ("Parcel Merger",               ["parcel merger", "merger of parcels", "parcel consolidation"]),
-    ("SOP / Procedure Guide",       ["standard operating", " sop ", "procedure steps", "step-by-step"]),
-    ("Reversion to Acreage",        ["reversion to acreage"]),
-    ("Annexation",                  ["annexation", "detachment"]),
+    ("Parcel Map",                      ["parcel map"]),
+    ("Lot Line Adjustment",             ["lot line adjustment", " lla ", "notice of lot line"]),
+    ("Tract Map / Subdivision",         ["tract map", "final map", "tentative map", "subdivision"]),
+    ("Easement / Right-of-Way",         ["easement", "right of way", "right-of-way", " r/w ", "dedication"]),
+    ("Abandonment / Vacation",          ["vacation", "abandonment", "street vacation", "alley vacation"]),
+    ("Deed",                            ["grant deed", "quitclaim deed", "trust deed", "deed of trust"]),
+    ("Condominium / Airspace Plan",     ["condominium plan", "condo plan", "cc&r",
+                                         "airspace condominium", "airspace"]),
+    ("Timeshare",                       ["timeshare", "time share"]),
+    ("Notice of Completion",            ["notice of completion"]),
+    ("Certificate of Compliance",       ["certificate of compliance"]),
+    ("Legal Description / Survey",      ["metes and bounds", "legal description", "record of survey",
+                                         "point of beginning", "thence"]),
+    ("Parcel Merger / Consolidation",   ["parcel merger", "merger of parcels", "parcel consolidation"]),
+    ("Reversion to Acreage",            ["reversion to acreage"]),
+    ("Annexation / Detachment",         ["annexation", "detachment"]),
+    ("R/T Code Reference",              ["revenue and taxation", "r&t", "r/t code"]),
+    ("ATS Workflow / Parceling",        ["parceling log", "doc screening", "type a", "type b",
+                                         "type c", "type d", "type e", "type f", "type g"]),
+    ("SOP / Procedure Guide",           ["standard operating", " sop ", "procedure steps",
+                                         "step-by-step", "quality assurance", "review checklist"]),
 ]
 
+
+# ======================================================
+# USEFULNESS HINTS
+# Maps classification label → plain-language relevance note.
+# ======================================================
+
+_USEFULNESS_HINTS = {
+    "Parcel Map":                    "May be relevant to parcel map processing, PM cuts, or production.",
+    "Lot Line Adjustment":           "May relate to LLA parceling, boundary changes, or APN reassignment.",
+    "Tract Map / Subdivision":       "May relate to tract map processing, lot creation, or final map recording.",
+    "Easement / Right-of-Way":       "May relate to easement parceling, R/W dedication, or access rights.",
+    "Abandonment / Vacation":        "May relate to street or alley vacation parceling and APN updates.",
+    "Deed":                          "May be a conveyance document relevant to ownership or parceling history.",
+    "Condominium / Airspace Plan":   "May relate to condo plan parceling, airspace units, or common area.",
+    "Timeshare":                     "May relate to timeshare parceling rules or ATS entry.",
+    "Notice of Completion":          "May relate to project completion recording and APN updates.",
+    "Certificate of Compliance":     "May relate to lot legality verification or parcel compliance.",
+    "Legal Description / Survey":    "May contain legal description language useful for boundary or parcel work.",
+    "Parcel Merger / Consolidation": "May relate to merger parceling, APN elimination, or consolidation rules.",
+    "Reversion to Acreage":          "May relate to map reversion parceling and APN reassignment.",
+    "Annexation / Detachment":       "May relate to annexation area changes and APN boundary updates.",
+    "R/T Code Reference":            "May contain Revenue and Taxation Code references relevant to parceling rules.",
+    "ATS Workflow / Parceling":      "May describe ATS entry procedures, DOC screening, or parceling log workflow.",
+    "SOP / Procedure Guide":         "May be a Mapping Division procedure document relevant to daily workflow.",
+}
 
 # ======================================================
 # EXTRACTION — EXCEL
@@ -350,28 +406,56 @@ def _classify_document(text):
 # SUMMARY BUILDER
 # ======================================================
 
-def _build_summary(file_type_label, what_it_is, apns, drns, dates):
+def _build_usefulness_hint(classifications):
+    """Return the first matching usefulness hint for detected classifications."""
+    for label in classifications:
+        hint = _USEFULNESS_HINTS.get(label)
+        if hint:
+            return hint
+    return "May be relevant to Mapping Division reference or workflow."
+
+
+def _detect_keyword_groups(text):
+    """Return a dict of group_name → list of matched keywords (non-empty groups only)."""
+    text_lower = text.lower()
+    result = {}
+    for group_name, keywords in MAPPING_KEYWORD_GROUPS.items():
+        matched = [kw for kw in keywords if kw.lower() in text_lower]
+        if matched:
+            result[group_name] = matched
+    return result
+
+
+def _build_summary(file_type_label, what_it_is, apns, drns, dates, keyword_groups):
     parts = []
+
+    classifications = [c.strip() for c in what_it_is.split("/") if c.strip()] if what_it_is else []
 
     if what_it_is and what_it_is != "General Mapping Document":
         parts.append(f"This appears to be a {what_it_is}.")
     else:
         parts.append(f"This is a {file_type_label} from the Mapping reference folders.")
 
+    # APN / DRN / date findings
     details = []
-
     if apns:
         sample = apns[0] if len(apns) == 1 else f"{apns[0]} and {len(apns) - 1} more"
         details.append(f"{len(apns)} APN{'s' if len(apns) > 1 else ''} detected ({sample})")
-
     if drns:
         details.append(f"{len(drns)} DRN{'s' if len(drns) > 1 else ''} detected")
-
     if dates:
         details.append(f"{len(dates)} date{'s' if len(dates) > 1 else ''} found")
-
     if details:
         parts.append(", ".join(details) + ".")
+
+    # Surface keyword groups when APNs/DRNs/dates are absent or sparse
+    if not apns and not drns and keyword_groups:
+        group_names = list(keyword_groups.keys())[:4]
+        parts.append(f"Detected Mapping terms related to: {', '.join(group_names)}.")
+
+    # Usefulness hint
+    hint = _build_usefulness_hint(classifications)
+    parts.append(hint)
 
     return " ".join(parts)
 
@@ -482,19 +566,23 @@ def summarize_file(file_path):
             ),
         }
 
-    # --------------------------------------------------
+        # --------------------------------------------------
     # Entity detection
     # --------------------------------------------------
     apns = _detect_apns(raw_text)
     drns = _detect_drns(raw_text)
     dates = _detect_dates(raw_text)
     keywords = _detect_mapping_keywords(raw_text)
+    keyword_groups = _detect_keyword_groups(raw_text)
 
     # --------------------------------------------------
     # Classification + summary
     # --------------------------------------------------
     what_it_is = _classify_document(raw_text)
-    summary = _build_summary(file_type_label, what_it_is, apns, drns, dates)
+    usefulness_hint = _build_usefulness_hint(
+        [c.strip() for c in what_it_is.split("/") if c.strip()]
+    )
+    summary = _build_summary(file_type_label, what_it_is, apns, drns, dates, keyword_groups)
 
     return {
         "ok": True,
@@ -509,5 +597,7 @@ def summarize_file(file_path):
         "possible_drns": drns,
         "possible_dates": dates,
         "possible_keywords": keywords,
+        "keyword_groups": keyword_groups,
+        "usefulness_hint": usefulness_hint,
         "what_this_appears_to_be": what_it_is,
     }

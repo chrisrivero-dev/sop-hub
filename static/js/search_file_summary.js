@@ -136,37 +136,81 @@
     lines.push("=====================");
     lines.push(`File: ${data.file_name || ""}`);
     lines.push(`Type: ${data.file_type || ""}`);
-    lines.push(`Source: ${data.source_path || ""}`);
     lines.push("");
 
     lines.push("What this appears to be:");
-    lines.push(data.what_this_appears_to_be || "No classification available.");
+    lines.push(
+      `  ${data.what_this_appears_to_be || "General Mapping Document"}`,
+    );
     lines.push("");
 
     lines.push("Summary:");
-    lines.push(data.summary || "No summary available.");
+    lines.push(`  ${data.summary || "No summary available."}`);
 
-    appendList(
-      lines,
-      "Detected Sheets / Pages / Sections",
-      data.detected_sections,
-    );
-    appendList(lines, "Possible APNs", data.possible_apns);
-    appendList(lines, "Possible DRNs", data.possible_drns);
-    appendList(lines, "Possible Dates", data.possible_dates);
-
-    if (data.possible_keywords && data.possible_keywords.length) {
+    if (data.usefulness_hint) {
       lines.push("");
-      lines.push("Possible Mapping Keywords:");
-      lines.push(data.possible_keywords.join(", "));
+      lines.push("Why it may be useful:");
+      lines.push(`  ${data.usefulness_hint}`);
     }
 
-    appendList(lines, "Extracted Preview", data.preview_lines);
+    if (data.detected_sections && data.detected_sections.length) {
+      lines.push("");
+      lines.push("Detected Sections / Sheets / Pages:");
+      data.detected_sections
+        .slice(0, 10)
+        .forEach((s) => lines.push(`  - ${s}`));
+    }
+
+    lines.push("");
+    lines.push("Possible APNs:");
+    if (data.possible_apns && data.possible_apns.length) {
+      data.possible_apns.forEach((v) => lines.push(`  - ${v}`));
+    } else {
+      lines.push("  None detected.");
+    }
+
+    lines.push("");
+    lines.push("Possible DRNs:");
+    if (data.possible_drns && data.possible_drns.length) {
+      data.possible_drns.forEach((v) => lines.push(`  - ${v}`));
+    } else {
+      lines.push("  None detected.");
+    }
+
+    lines.push("");
+    lines.push("Possible Dates:");
+    if (data.possible_dates && data.possible_dates.length) {
+      data.possible_dates.forEach((v) => lines.push(`  - ${v}`));
+    } else {
+      lines.push("  None detected.");
+    }
+
+    if (data.keyword_groups && Object.keys(data.keyword_groups).length) {
+      lines.push("");
+      lines.push("Detected Mapping Term Categories:");
+      Object.entries(data.keyword_groups).forEach(([group, terms]) => {
+        lines.push(`  ${group}: ${terms.join(", ")}`);
+      });
+    } else if (data.possible_keywords && data.possible_keywords.length) {
+      lines.push("");
+      lines.push("Possible Mapping Keywords:");
+      lines.push(`  ${data.possible_keywords.join(", ")}`);
+    } else {
+      lines.push("");
+      lines.push("Detected Mapping Term Categories:");
+      lines.push("  None detected.");
+    }
+
+    if (data.preview_lines && data.preview_lines.length) {
+      lines.push("");
+      lines.push("First Meaningful Excerpt:");
+      data.preview_lines.slice(0, 8).forEach((l) => lines.push(`  ${l}`));
+    }
 
     lines.push("");
     lines.push("Review note:");
     lines.push(
-      "Verify against the original file before using for parceling, APN, DRN, legal description, or Mapping production work.",
+      "  Verify against the original file before using for parceling, APN, DRN, legal description, or Mapping production work.",
     );
 
     return lines.join("\n");
