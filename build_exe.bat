@@ -11,7 +11,7 @@ echo Done.
 echo.
 
 echo Running PyInstaller from spec file...
-pyinstaller --noconfirm OC_SOP_Hub.spec
+venv\Scripts\pyinstaller.exe --noconfirm --clean --distpath C:\sop-hub\dist --workpath C:\sop-hub\build OC_SOP_Hub.spec
 
 echo.
 echo ================================================
