@@ -434,7 +434,7 @@ def summarize_file(file_path):
     # --------------------------------------------------
     # Unsupported: everything else
     # --------------------------------------------------
-    if ext not in {".pdf", ".docx", ".xlsx", ".xls"}:
+    if ext not in {".pdf", ".docx", ".docm", ".xlsx", ".xls"}:
         return {
             "ok": True,
             "supported": False,
@@ -452,9 +452,9 @@ def summarize_file(file_path):
             raw_text, sections, preview = _extract_excel(file_path)
             file_type_label = "Excel Workbook"
 
-        elif ext == ".docx":
+        elif ext in {".docx", ".docm"}:
             raw_text, sections, preview = _extract_docx(file_path)
-            file_type_label = "Word Document"
+            file_type_label = "Word Macro-Enabled Document" if ext == ".docm" else "Word Document"
 
         else:  # .pdf
             raw_text, sections, preview = _extract_pdf(file_path)

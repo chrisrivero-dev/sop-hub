@@ -127,9 +127,10 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
-  function renderRelatedFiles(files) {
+  function renderRelatedFiles(files, fullWidth = false) {
+    const colClass = fullWidth ? "lg:col-span-2" : "";
     let html = `
-      <div class="p-4 border rounded bg-white shadow-sm">
+      <div class="p-4 border rounded bg-white shadow-sm ${colClass}">
         <div class="text-sm text-gray-500 mb-2">RELATED FILES</div>
     `;
 
@@ -313,10 +314,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       let html = `<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">`;
       html += renderRecommendedAction(examples);
-      html += renderRelatedFiles(files);
+      html += renderRelatedFiles(files, examples.length === 0);
       html += `</div>`;
-      html += renderExamplesTable(examples);
-      html += renderPreviewPanel();
 
       resultsContainer.innerHTML = html;
       bindEvents();
