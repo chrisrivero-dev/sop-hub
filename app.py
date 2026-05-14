@@ -843,7 +843,6 @@ def launch_browser_once():
 
     threading.Timer(1.0, open_browser).start()
 
-
 # ======================================================
 # ROUTES
 # ======================================================
@@ -1257,10 +1256,9 @@ def import_settings():
 
 
 if __name__ == "__main__":
-    launch_browser_once()
     app.run(
         host="127.0.0.1",
-        port=5050,  # CHANGED FROM 5000 → 5050
+        port=5050,
         debug=True,
         use_reloader=False
     )
