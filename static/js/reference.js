@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
           pinBtn.textContent = "☆";
           pinBtn.classList.remove("text-yellow-500");
 
-          const row = pinBtn.closest("tr");
+          const row = pinBtn.closest(".ref-row");
           if (row) row.remove();
         }
       } catch (err) {
@@ -238,6 +238,22 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("OPEN ERROR:", err);
       }
 
+      return;
+    }
+
+    // =========================
+    // DETAILS TOGGLE
+    // =========================
+    const detailsBtn = e.target.closest(".details-toggle");
+
+    if (detailsBtn) {
+      const rowEl = detailsBtn.closest(".ref-row");
+      const detail = rowEl?.querySelector(".ref-row-detail");
+      if (detail) {
+        const opening = detail.classList.contains("hidden");
+        detail.classList.toggle("hidden");
+        detailsBtn.textContent = opening ? "Details ⌃" : "Details ⌄";
+      }
       return;
     }
 
@@ -415,4 +431,29 @@ document.addEventListener("DOMContentLoaded", () => {
       fileInput.click();
     });
   }
+
+  // =========================
+  // GROUP BADGE SYNC
+  // =========================
+  document.querySelectorAll(".group-select").forEach((select) => {
+    select.addEventListener("change", () => {
+      const row = select.closest(".ref-row");
+      const badge = row?.querySelector(".ref-group-badge");
+      if (badge) badge.textContent = select.value;
+    });
+  });
+
+  // =========================
+  // NOTES PREVIEW SYNC
+  // =========================
+  document.querySelectorAll(".note-input").forEach((textarea) => {
+    textarea.addEventListener("input", () => {
+      const row = textarea.closest(".ref-row");
+      const preview = row?.querySelector(".ref-notes-preview");
+      if (preview) {
+        const firstLine = textarea.value.split("\n")[0].slice(0, 80);
+        preview.textContent = firstLine || "No notes yet.";
+      }
+    });
+  });
 });

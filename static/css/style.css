@@ -7,11 +7,12 @@
     background: white;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .reference-table thead {
-    background: #f3f4f6; /* light gray */
+    background: #f3f4f6;
+    /* light gray */
 }
 
 .reference-table th {
@@ -19,7 +20,8 @@
     text-align: left;
     font-size: 14px;
     font-weight: 700;
-    color: #374151; /* dark slate */
+    color: #374151;
+    /* dark slate */
 }
 
 .reference-table td {
@@ -33,21 +35,37 @@
 }
 
 .reference-table tbody tr:hover {
-    background: #eef2ff; /* subtle blue hover */
+    background: #eef2ff;
+    /* subtle blue hover */
 }
 
 /* Column widths */
-.col-pin     { width: 45px; }
-.col-name    { width: 35%; }
-.col-folder  { width: 30%; }
-.col-notes   { width: 20%; }
-.col-actions { width: 120px; }
+.col-pin {
+    width: 45px;
+}
+
+.col-name {
+    width: 35%;
+}
+
+.col-folder {
+    width: 30%;
+}
+
+.col-notes {
+    width: 20%;
+}
+
+.col-actions {
+    width: 120px;
+}
 
 /* Star styling */
 .pin-star {
     cursor: pointer;
     font-size: 20px;
-    color: #fbbf24; /* amber-400 */
+    color: #fbbf24;
+    /* amber-400 */
     transition: transform 0.1s ease, opacity 0.1s ease;
 }
 
@@ -69,6 +87,7 @@
 .open-btn:hover {
     background: #1e40af;
 }
+
 .notes-box {
     width: 100%;
     min-height: 45px;
@@ -78,7 +97,8 @@
     line-height: 1.4;
     border: 1px solid #d1d5db;
     border-radius: 6px;
-    resize: none; /* disable manual resizing */
+    resize: none;
+    /* disable manual resizing */
     overflow: hidden;
     transition: border-color 0.15s ease;
 }
@@ -88,13 +108,16 @@
     border-color: #2563eb;
     background: #f8fafc;
 }
+
 .file-link {
     color: #1d4ed8;
     font-weight: 500;
 }
+
 .file-link:hover {
     text-decoration: underline;
 }
+
 .no-results-msg {
     margin-top: 20px;
     padding: 16px 18px;
@@ -104,6 +127,7 @@
     border-radius: 6px;
     font-size: 14px;
 }
+
 .pin-star {
     cursor: pointer;
     font-size: 24px;
@@ -116,19 +140,24 @@
     appearance: none !important;
     -webkit-appearance: none !important;
 }
+
 .pin-star:focus {
     outline: none !important;
     box-shadow: none !important;
 }
+
 .result-item {
     margin-left: 0 !important;
 }
+
 .result-item * {
     margin-left: 0 !important;
 }
+
 .display-input {
     text-transform: none !important;
 }
+
 .group-header {
     white-space: nowrap;
 }
@@ -138,6 +167,94 @@
     margin-left: 8px;
     cursor: pointer;
 }
+
 .delete-group {
     cursor: pointer;
+}
+
+/* ---- Reference Library Hybrid Row Layout ---- */
+
+.ref-display-name {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 14px;
+    color: #1f2937;
+    min-width: 0;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ref-display-name:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+}
+
+.ref-display-name:focus {
+    outline: none;
+    border-color: #2563eb;
+    background: #fff;
+}
+
+.ref-group-badge {
+    display: inline-block;
+    background: #e5e7eb;
+    color: #374151;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ref-notes-preview {
+    font-size: 12px;
+    color: #9ca3af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+    flex-shrink: 1;
+}
+
+.ref-action-btn {
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    line-height: 1;
+    transition: background 0.1s ease;
+}
+
+.ref-action-btn:hover {
+    background: #e5e7eb;
+}
+
+.ref-details-btn {
+    background: none;
+    border: 1px solid #d1d5db;
+    padding: 2px 8px;
+    font-size: 12px;
+    color: #6b7280;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.1s ease, color 0.1s ease;
+}
+
+.ref-details-btn:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.ref-detail-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #6b7280;
+    letter-spacing: 0.05em;
+    width: 60px;
+    flex-shrink: 0;
 }
