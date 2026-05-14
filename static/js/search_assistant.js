@@ -217,6 +217,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!data.success) {
         console.warn("Pin ignored or failed:", data);
+
+        if (data.ignored && data.reason === "generated_preview_asset") {
+          buttonEl.textContent = "\u2298";
+          buttonEl.title = "Preview image — pin the source file instead";
+
+          setTimeout(() => {
+            buttonEl.textContent = "\u2606";
+            buttonEl.title = "Add to Reference Library";
+          }, 2500);
+        }
+
         return;
       }
 

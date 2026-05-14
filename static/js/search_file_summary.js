@@ -86,8 +86,9 @@
         return;
       }
 
-      if (data.supported === false) {
-        lastSummaryText = formatUnsupportedSummary(data);
+      // Unsupported file type — show structured result with clear reason
+      if (!data.supported) {
+        lastSummaryText = formatUnsupportedDetails(data, mode);
         output.textContent = lastSummaryText;
         return;
       }
@@ -179,14 +180,35 @@
     lines.push(`File: ${data.file_name || ""}`);
     lines.push("");
 
-    appendList(lines, "Possible APNs", data.possible_apns);
-    appendList(lines, "Possible DRNs", data.possible_drns);
-    appendList(lines, "Possible Dates", data.possible_dates);
+    lines.push("Possible APNs:");
+    if (data.possible_apns && data.possible_apns.length) {
+      data.possible_apns.forEach((v) => lines.push(`  - ${v}`));
+    } else {
+      lines.push("  No APNs found.");
+    }
 
+    lines.push("");
+    lines.push("Possible DRNs:");
+    if (data.possible_drns && data.possible_drns.length) {
+      data.possible_drns.forEach((v) => lines.push(`  - ${v}`));
+    } else {
+      lines.push("  No DRNs found.");
+    }
+
+    lines.push("");
+    lines.push("Possible Dates:");
+    if (data.possible_dates && data.possible_dates.length) {
+      data.possible_dates.forEach((v) => lines.push(`  - ${v}`));
+    } else {
+      lines.push("  No dates found.");
+    }
+
+    lines.push("");
+    lines.push("Possible Mapping Keywords:");
     if (data.possible_keywords && data.possible_keywords.length) {
-      lines.push("");
-      lines.push("Possible Mapping Keywords:");
-      lines.push(data.possible_keywords.join(", "));
+      lines.push("  " + data.possible_keywords.join(", "));
+    } else {
+      lines.push("  No Mapping keywords found.");
     }
 
     lines.push("");
@@ -196,7 +218,30 @@
 
     return lines.join("\n");
   }
+  function formatUnsupportedDetails(data, mode) {
+    const lines = [];
 
+    const title =
+      mode === "details" ? "Extracted Key Details" : "Selected File Summary";
+    lines.push(title);
+    lines.push("=====================");
+    lines.push(`File: ${data.file_name || ""}`);
+    lines.push(`Type: ${data.file_type || ""}`);
+    lines.push("");
+    lines.push("This file type is not supported for local extraction.");
+    lines.push(data.error || "Open the original file directly.");
+    lines.push("");
+    lines.push("Possible APNs:             No APNs found.");
+    lines.push("Possible DRNs:             No DRNs found.");
+    lines.push("Possible Dates:            No dates found.");
+    lines.push("Possible Mapping Keywords: No Mapping keywords found.");
+    lines.push("");
+    lines.push(
+      "Verify against the original file before using for parceling, APN, DRN, legal description, or Mapping production work.",
+    );
+
+    return lines.join("\n");
+  }
   function appendList(lines, title, items) {
     if (!items || !items.length) {
       return;

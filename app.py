@@ -743,6 +743,7 @@ def index_qdrive_files():
                 ext = ext.lower()
 
                               # Only index selected file types
+                # Only index selected file types
                 if ext not in [
                     ".txt",
                     ".doc", ".docx",
@@ -751,6 +752,10 @@ def index_qdrive_files():
                     ".pptx",
                     ".png", ".jpg", ".jpeg",
                 ]:
+                    continue
+
+                # Skip companion preview images (same basename as a source file)
+                if is_generated_preview_asset(full_path):
                     continue
 
 
