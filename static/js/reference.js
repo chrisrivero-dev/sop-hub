@@ -253,5 +253,166 @@ document.addEventListener("DOMContentLoaded", () => {
         window.loadReferencePreview?.(path);
       }
     }
+
+    // =========================
+    // DELETE GROUP
+    // =========================
+    const deleteGroupBtn = e.target.closest(".delete-group");
+
+    if (deleteGroupBtn) {
+      const groupName = deleteGroupBtn.dataset.groupName;
+      if (!groupName) return;
+
+      if (
+        !confirm(`Delete group "${groupName}"? Items will move to Ungrouped.`)
+      )
+        return;
+
+      try {
+        const resp = await fetch(
+          `/delete-group/${encodeURIComponent(groupName)}`,
+          {
+            method: "POST",
+          },
+        );
+        const data = await resp.json();
+
+        if (!data.success) {
+          alert(data.error || "Could not delete group.");
+          return;
+        }
+
+        window.location.reload();
+      } catch (err) {
+        console.error("DELETE GROUP ERROR:", err);
+        alert("Unexpected error deleting group.");
+      }
+    }
   });
+
+  // =========================
+  // SEARCH / FILTER
+  // =========================
+  const refSearch = document.getElementById("refSearch");
+  if (refSearch) {
+    refSearch.addEventListener("input", () => {
+      const query = refSearch.value.toLowerCase();
+      document.querySelectorAll(".ref-row").forEach((row) => {
+        const name = (row.dataset.name || "").toLowerCase();
+        const file = (row.dataset.file || "").toLowerCase();
+        const visible = !query || name.includes(query) || file.includes(query);
+        row.style.display = visible ? "" : "none";
+      });
+    });
+  }
+
+  // =========================
+  // ADD NEW GROUP
+  // =========================
+  const addGroupBtn = document.getElementById("addGroupBtn");
+  if (addGroupBtn) {
+    addGroupBtn.addEventListener("click", async () => {
+      const name = prompt("Enter new group name:");
+      if (!name || !name.trim()) return;
+
+      try {
+        const resp = await fetch("/create-group", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim() }),
+        });
+        const data = await resp.json();
+
+        if (!data.success) {
+          alert(data.error || "Could not create group.");
+          return;
+        }
+
+        window.location.reload();
+      } catch (err) {
+        console.error("ADD GROUP ERROR:", err);
+        alert("Unexpected error creating group.");
+      }
+    });
+  }
+
+  // =========================
+  // EXPORT
+  // =========================
+  const exportBtn = document.getElementById("exportBtn");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", async () => {
+      try {
+        const resp = await fetch("/export-settings");
+        const data = await resp.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "sop_hub_reference.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error("EXPORT ERROR:", err);
+        alert("Export failed.");
+      }
+    });
+  }
+
+  // =========================
+  // IMPORT
+  // =========================
+  const importBtn = document.getElementById("importBtn");
+  if (importBtn) {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".json";
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      let parsed;
+      try {
+        parsed = JSON.parse(await file.text());
+      } catch {
+        alert("Invalid JSON file.");
+        return;
+      }
+
+      if (
+        !confirm(
+          "Import will replace all current Reference Library data. Continue?",
+        )
+      ) {
+        return;
+      }
+
+      try {
+        const resp = await fetch("/import-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(parsed),
+        });
+        const data = await resp.json();
+
+        if (!data.success) {
+          alert(data.message || "Import failed.");
+          return;
+        }
+
+        window.location.reload();
+      } catch (err) {
+        console.error("IMPORT ERROR:", err);
+        alert("Import failed.");
+      }
+    });
+
+    importBtn.addEventListener("click", () => {
+      fileInput.value = "";
+      fileInput.click();
+    });
+  }
 });
