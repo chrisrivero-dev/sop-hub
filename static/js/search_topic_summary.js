@@ -2,8 +2,13 @@
    SEARCH HUB — TOPIC SUMMARY
    Owns: Summarize Topic button, POST /topic-summary,
          topic result panel rendering.
-   Does NOT modify search_assistant.js or search_file_summary.js.
-   Reads result paths from DOM: [data-file-path] elements.
+
+   DOM contract:
+     #topicSummaryControls — button container, sibling after #resultsContainer
+     #topicSummaryPanel    — result output, sibling after #topicSummaryControls
+
+   The MutationObserver watches #resultsContainer but NEVER mutates it.
+   All DOM writes go to #topicSummaryControls or #topicSummaryPanel only.
 ===================================================== */
 
 (function () {
@@ -137,97 +142,114 @@
   }
 
   // =========================
-  // INJECT BUTTON
+  // BUTTON VISIBILITY
+  // Only show/hide — never inject/remove repeatedly.
   // =========================
-  function injectSummarizeButton() {
-    const resultsContainer = document.getElementById("resultsContainer");
-    if (!resultsContainer) return;
+  function updateSummarizeButton() {
+    const controls = document.getElementById("topicSummaryControls");
+    const panel = document.getElementById("topicSummaryPanel");
+    if (!controls) return;
 
-    // Remove any previously injected button wrapper
-    const existingBtn = document.getElementById("summarizeTopicBtn");
-    if (existingBtn) {
-      existingBtn.closest(".topic-summary-btn-wrapper")?.remove();
+    const paths = getCurrentPaths();
+
+    if (!paths.length) {
+      controls.style.display = "none";
+      if (panel) panel.innerHTML = "";
+      return;
     }
 
-    // Clear old result panel
-    const panel = document.getElementById("topicSummaryPanel");
-    if (panel) panel.innerHTML = "";
-
-    // Only show button if there are result paths
-    const paths = getCurrentPaths();
-    if (!paths.length) return;
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "topic-summary-btn-wrapper mt-4";
-    wrapper.innerHTML = `
-      <button id="summarizeTopicBtn" type="button"
-              class="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-semibold"
-              style="cursor: pointer;">
-        Summarize Topic
-      </button>
-    `;
-
-    resultsContainer.appendChild(wrapper);
-
-    document
-      .getElementById("summarizeTopicBtn")
-      .addEventListener("click", async () => {
-        const btn = document.getElementById("summarizeTopicBtn");
-        const query = document.getElementById("searchInput")?.value?.trim();
-
-        if (!query) return;
-
-        const currentPaths = getCurrentPaths();
-        if (!currentPaths.length) return;
-
-        const originalText = btn.textContent;
-        btn.textContent = "Summarizing\u2026";
-        btn.disabled = true;
-
-        try {
-          const resp = await fetch("/topic-summary", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query, paths: currentPaths }),
-          });
-
-          const data = await resp.json();
-          renderTopicSummary(data);
-        } catch (err) {
-          console.error("TOPIC SUMMARY ERROR:", err);
-          const p = document.getElementById("topicSummaryPanel");
-          if (p) {
-            p.innerHTML = `
-            <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-              Request failed. Check the console for details.
-            </div>
-          `;
-          }
-        } finally {
-          btn.textContent = originalText;
-          btn.disabled = false;
-        }
-      });
+    controls.style.display = "";
   }
 
   // =========================
-  // OBSERVE RESULTS CONTAINER
+  // BUTTON CLICK HANDLER
+  // =========================
+  async function handleSummarizeClick() {
+    const btn = document.getElementById("summarizeTopicBtn");
+    const panel = document.getElementById("topicSummaryPanel");
+    if (!btn || !panel) return;
+
+    const query = document.getElementById("searchInput")?.value?.trim();
+    if (!query) return;
+
+    const paths = getCurrentPaths();
+    if (!paths.length) return;
+
+    const originalText = btn.textContent;
+    btn.textContent = "Summarizing\u2026";
+    btn.disabled = true;
+
+    try {
+      const resp = await fetch("/topic-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, paths }),
+      });
+
+      const data = await resp.json();
+      renderTopicSummary(data);
+    } catch (err) {
+      console.error("TOPIC SUMMARY ERROR:", err);
+      panel.innerHTML = `
+        <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+          Request failed. Check the console for details.
+        </div>
+      `;
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // =========================
+  // INIT
   // =========================
   document.addEventListener("DOMContentLoaded", () => {
     const resultsContainer = document.getElementById("resultsContainer");
     if (!resultsContainer) return;
 
-    // Create the topic panel as a sibling after resultsContainer
-    // so it is not destroyed when resultsContainer.innerHTML changes
+    // Create #topicSummaryControls once, as a sibling after #resultsContainer.
+    // Never placed inside #resultsContainer.
+    let controls = document.getElementById("topicSummaryControls");
+    if (!controls) {
+      controls = document.createElement("div");
+      controls.id = "topicSummaryControls";
+      controls.style.display = "none";
+      controls.innerHTML = `
+        <div class="mt-4">
+          <button id="summarizeTopicBtn" type="button"
+                  class="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-semibold"
+                  style="cursor: pointer;">
+            Summarize Topic
+          </button>
+        </div>
+      `;
+      resultsContainer.insertAdjacentElement("afterend", controls);
+
+      document
+        .getElementById("summarizeTopicBtn")
+        .addEventListener("click", handleSummarizeClick);
+    }
+
+    // Create #topicSummaryPanel once, as a sibling after #topicSummaryControls.
     let panel = document.getElementById("topicSummaryPanel");
     if (!panel) {
       panel = document.createElement("div");
       panel.id = "topicSummaryPanel";
-      resultsContainer.insertAdjacentElement("afterend", panel);
+      controls.insertAdjacentElement("afterend", panel);
     }
 
+    // Watch #resultsContainer for new search results.
+    // Debounce with requestAnimationFrame — never mutates #resultsContainer.
+    let rafPending = false;
+
     const observer = new MutationObserver(() => {
-      injectSummarizeButton();
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        updateSummarizeButton();
+      });
     });
 
     observer.observe(resultsContainer, { childList: true, subtree: false });
