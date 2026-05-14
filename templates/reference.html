@@ -45,22 +45,34 @@
             <!-- GROUP SECTION -->
             <div class="ref-group-section border rounded bg-white shadow-sm overflow-hidden">
 
-                <!-- GROUP HEADER -->
-                <div class="group-header bg-gray-100 border-b cursor-pointer px-3 py-2" data-group="{{ group }}">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-2">
-                            <span class="group-arrow text-gray-500 text-xs">▼</span>
-                            <span class="font-semibold text-gray-700 text-sm">{{ group }}</span>
-                            <span class="text-xs text-gray-400">({{ items|length }})</span>
-                        </div>
-                        {% if group not in built_in %}
-                        <button class="delete-group text-red-400 hover:text-red-600 text-sm" type="button"
-                            data-group-name="{{ group }}">
-                            🗑
-                        </button>
-                        {% endif %}
-                    </div>
-                </div>
+                                <!-- GROUP HEADER -->
+                                {% set group_descriptions = {
+                                "Procedures": "Official Mapping Division procedures and workflow references.",
+                                "Cut Sheets": "Cut sheet templates, examples, and processing references.",
+                                "Tracts": "Tract map processing, status tracking, and related references.",
+                                "Parcel Maps": "Parcel map processing, PM cuts, and production references.",
+                                "QA": "Review, validation, and quality-control references.",
+                                "General": "General Mapping Division reference files.",
+                                "Ungrouped": "Files not yet assigned to a group."
+                                } %}
+                                <div class="group-header bg-gray-100 border-b cursor-pointer px-3 py-2" data-group="{{ group }}">
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="group-arrow text-gray-500 text-xs">▼</span>
+                                            <span class="font-semibold text-gray-700 text-sm">{{ group }}</span>
+                                            <span class="text-xs text-gray-400">({{ items|length }})</span>
+                                            {% if group in group_descriptions %}
+                                            <span class="ref-group-description">{{ group_descriptions[group] }}</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if group not in built_in %}
+                                        <button class="delete-group text-red-400 hover:text-red-600 text-sm" type="button"
+                                            data-group-name="{{ group }}">
+                                            🗑
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
 
                 <!-- GROUP BODY -->
                 <div class="group-body" id="group-body-{{ group.replace(' ', '-') }}" data-group="{{ group }}">
