@@ -33,21 +33,28 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 EXCEL_FILENAME = "ParcelingLogCRTEMP.xlsx"
 
+# In-memory cache: avoid re-reading Excel on every search request.
+_excel_cache = {"mtime": None, "rows": []}
 
-def load_excel_examples(query):
-    results = []
+
+def _load_excel_rows():
+    """Parse ParcelingLogCRTEMP.xlsx into a list of row dicts. Cached by mtime."""
+    excel_path = os.path.join(BASE_DIR, EXCEL_FILENAME)
+
+    if not os.path.exists(excel_path):
+        return []
 
     try:
-        excel_path = os.path.join(BASE_DIR, EXCEL_FILENAME)
+        mtime = os.path.getmtime(excel_path)
+    except OSError:
+        return []
 
-        print("📂 LOOKING FOR EXCEL AT:", excel_path)
+    if _excel_cache["mtime"] == mtime and _excel_cache["rows"] is not None:
+        return _excel_cache["rows"]
 
-        if not os.path.exists(excel_path):
-            print(f"[ERROR] Excel file NOT FOUND at: {excel_path}")
-            return []
-
+    rows = []
+    try:
         xl = pd.ExcelFile(excel_path)
-
         target_sheets = ["PARCELING", "DOC SCREENING"]
 
         for sheet in target_sheets:
@@ -58,42 +65,18 @@ def load_excel_examples(query):
             df = df.fillna("")
 
             for _, row in df.iterrows():
-
                 drn = str(row.get("DRN", "")).strip()
                 action = str(row.get("Action", "")).strip()
+
+                if not drn.isdigit() or not action:
+                    continue
+
                 remarks = str(row.get("Remarks", "")).strip()
                 apn = str(row.get("APN", "")).strip()
                 date = str(row.get("Date", "")).strip()
                 notes = str(row.get("Notes", "")).strip()
                 example_file_raw = str(row.get("Example_File", "")).strip()
 
-                # -------------------------
-                # FILTER BAD ROWS
-                # -------------------------
-                if not drn.isdigit():
-                    continue
-
-                if not action:
-                    continue
-
-                # -------------------------
-                # SEARCH MATCH
-                # -------------------------
-                combined = " ".join([
-                    drn,
-                    action,
-                    remarks,
-                    apn,
-                    date,
-                    notes,
-                ]).lower()
-
-                if query.lower() not in combined:
-                    continue
-
-                # -------------------------
-                # BUILD REAL FILE PATH
-                # -------------------------
                 example_file_path = ""
                 if example_file_raw:
                     example_file_path = os.path.join(
@@ -101,7 +84,7 @@ def load_excel_examples(query):
                         example_file_raw
                     )
 
-                results.append({
+                rows.append({
                     "drn": drn,
                     "action": action,
                     "remarks": remarks,
@@ -110,14 +93,28 @@ def load_excel_examples(query):
                     "notes": notes,
                     "example_file": example_file_path,
                     "sheet": sheet,
+                    "_combined": " ".join([drn, action, remarks, apn, date, notes]).lower(),
                 })
 
-        return results[:10]
+        _excel_cache["mtime"] = mtime
+        _excel_cache["rows"] = rows
 
     except Exception as e:
         print("Excel read error:", e)
+
+    return rows
+
+
+def load_excel_examples(query):
+    rows = _load_excel_rows()
+
+    if not query:
         return []
 
+    q = query.lower()
+    matched = [r for r in rows if q in r["_combined"]]
+
+    return [{k: v for k, v in r.items() if k != "_combined"} for r in matched[:10]]
 
 template_dir = os.path.join(BASE_DIR, "templates")
 static_dir   = os.path.join(BASE_DIR, "static")
@@ -870,10 +867,6 @@ def search():
     try:
         results = run_search(query, mode)
         examples = load_excel_examples(query)
-
-        # TEMP FORCE TEST
-        if not examples:
-            examples = load_excel_examples("")  # load ALL rows
 
         print("🔥 RESULTS:", len(results))
         print("🔥 EXAMPLES:", len(examples))
