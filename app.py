@@ -454,7 +454,6 @@ def sort_results(ranked, query_lower):
 
     return xls_files + other_files
 
-
 def run_search(query, mode="filename"):
     query_lower = query.lower()
     ranked_results = []
@@ -478,29 +477,37 @@ def run_search(query, mode="filename"):
 
     # 1) INDEXED SEARCH
     if indexed and len(indexed) > 0:
+        # Load all Reference rows once — avoids N+1 per-item queries
+        ref_map = {
+            r.file_path: r.id
+            for r in Reference.query.with_entities(
+                Reference.file_path,
+                Reference.id,
+            ).all()
+        }
+
         for item in indexed:
-            file_lower = (item.file_name or "").lower()
             snippet = ""
 
             if mode == "content" and item.content:
                 idx = item.content.lower().find(query_lower)
                 if idx != -1:
-                    snippet = item.content[max(0, idx - 60): idx + 60]
+                    snippet = item.content[max(0, idx - 60):idx + 60]
 
             key = (item.file_path or "").lower()
             if not key or key in seen:
                 continue
             seen.add(key)
 
-            ref = Reference.query.filter_by(file_path=item.file_path).first()
+            ref_id = ref_map.get(item.file_path, 0)
 
             entry = {
                 "name": item.file_name,
                 "folder": item.folder,
                 "full_path": item.file_path,
                 "snippet": snippet,
-                "is_pinned": True if ref else False,
-                "ref_id": ref.id if ref else 0,
+                "is_pinned": ref_id > 0,
+                "ref_id": ref_id,
                 "file_type": item.ext,
             }
 
@@ -512,6 +519,7 @@ def run_search(query, mode="filename"):
     # 2) FALLBACK SLOW SEARCH
     print("⚠️ No indexed records found — using slow filesystem search")
     return run_slow_search(query, mode)
+
 
 
 
