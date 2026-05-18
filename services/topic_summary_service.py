@@ -56,6 +56,63 @@ def _find_snippets(text, query):
 
 
 # ======================================================
+# FILE RELEVANCE SCORING
+# ======================================================
+
+def _score_file(file_name, file_path, snippets, apns, drns, classification, query):
+    """
+    Score a file's relevance to the query using deterministic signals only.
+    Returns (score: int, tier: str, reason: str).
+
+    Tiers:
+      strong   — score >= 4
+      moderate — score 2–3
+      weak     — score <= 1
+    """
+    score = 0
+    reasons = []
+    query_lower = query.lower()
+
+    # Signal 1: query term in file name (strongest)
+    if query_lower in file_name.lower():
+        score += 3
+        reasons.append("search term found in file name")
+
+    # Signal 2: query term in folder/parent directory name
+    folder_name = os.path.basename(os.path.dirname(file_path)).lower()
+    if query_lower in folder_name:
+        score += 2
+        reasons.append("search term found in folder name")
+
+    # Signal 3: content snippets containing the term
+    if snippets:
+        score += min(len(snippets), 3)
+        label = "snippet" if len(snippets) == 1 else "snippets"
+        reasons.append(f"{len(snippets)} matching {label} found in content")
+
+    # Signal 4: document contains APNs or DRNs (entity-rich)
+    if apns or drns:
+        score += 1
+        reasons.append("contains APN or DRN references")
+
+    # Signal 5: meaningful classification (not generic fallback)
+    if classification and classification != "General Mapping Document":
+        score += 1
+        reasons.append(f"appears to be: {classification}")
+
+    if score >= 4:
+        tier = "strong"
+    elif score >= 2:
+        tier = "moderate"
+    else:
+        tier = "weak"
+
+    reason = "; ".join(reasons) if reasons else "indirect or partial match only"
+
+    return score, tier, reason
+
+
+# ======================================================
 # PUBLIC ENTRY POINT
 # ======================================================
 
@@ -167,6 +224,11 @@ def summarize_topic(query, paths):
         keywords = _detect_mapping_keywords(raw_text)
         classification = _classify_document(raw_text)
 
+        # Relevance scoring
+        match_score, match_tier, match_reason = _score_file(
+            file_name, path, snippets, apns, drns, classification, query
+        )
+
         # Deduplicated aggregation
         for apn in apns:
             if apn not in seen_apns:
@@ -206,7 +268,17 @@ def summarize_topic(query, paths):
             "keywords": keywords,
             "classification": classification,
             "had_match": had_match,
+            "match_score": match_score,
+            "match_tier": match_tier,
+            "match_reason": match_reason,
         })
+
+    # Sort by relevance score descending
+    file_results.sort(key=lambda r: r["match_score"], reverse=True)
+
+    strong = sum(1 for r in file_results if r["match_tier"] == "strong")
+    moderate = sum(1 for r in file_results if r["match_tier"] == "moderate")
+    weak = sum(1 for r in file_results if r["match_tier"] == "weak")
 
     return {
         "ok": True,
@@ -215,6 +287,9 @@ def summarize_topic(query, paths):
         "files_matched": files_matched,
         "files_skipped": files_skipped,
         "file_results": file_results,
+        "strong_count": strong,
+        "moderate_count": moderate,
+        "weak_count": weak,
         "all_apns": all_apns[:20],
         "all_drns": all_drns[:20],
         "all_dates": all_dates[:15],

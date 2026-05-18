@@ -61,11 +61,13 @@
 
     lines.push(`TOPIC SUMMARY \u2014 "${escapeHtml(data.query)}"`);
     lines.push("\u2500".repeat(52));
-    lines.push(`Files reviewed:  ${data.files_reviewed}`);
-    lines.push(`Files matched:   ${data.files_matched}`);
+    lines.push(`Files reviewed:   ${data.files_reviewed}`);
+    lines.push(`Strong matches:   ${data.strong_count ?? 0}`);
+    lines.push(`Moderate matches: ${data.moderate_count ?? 0}`);
+    lines.push(`Weak / indirect:  ${data.weak_count ?? 0}`);
 
     if (data.files_skipped && data.files_skipped.length) {
-      lines.push(`Files skipped:   ${data.files_skipped.length}`);
+      lines.push(`Files skipped:    ${data.files_skipped.length}`);
       data.files_skipped.forEach((s) => {
         lines.push(
           `  \u2022 ${escapeHtml(s.file)} \u2014 ${escapeHtml(s.reason)}`,
@@ -73,62 +75,88 @@
       });
     }
 
-    lines.push("");
+    // Strong and moderate files
+    const primary = (data.file_results || []).filter(
+      (r) => r.match_tier === "strong" || r.match_tier === "moderate",
+    );
 
-    const matched = (data.file_results || []).filter((r) => r.had_match);
-
-    if (matched.length) {
-      lines.push("MATCHING SNIPPETS");
-      matched.forEach((r) => {
+    if (primary.length) {
+      lines.push("");
+      lines.push("BEST FILES TO REVIEW FIRST");
+      primary.forEach((r) => {
+        const tierLabel =
+          r.match_tier === "strong" ? "Strong match" : "Moderate match";
         lines.push(`  [${escapeHtml(r.file_name)}]`);
-        r.snippets.forEach((s) => {
-          lines.push(`    \u201c${escapeHtml(s)}\u201d`);
-        });
+        lines.push(`    Match: ${tierLabel}`);
+        lines.push(`    Reason: ${escapeHtml(r.match_reason || "")}`);
+        if (r.snippets && r.snippets.length) {
+          r.snippets.forEach((s) => {
+            lines.push(`    \u201c${escapeHtml(s)}\u201d`);
+          });
+        }
       });
-      lines.push("");
     } else {
-      lines.push("MATCHING SNIPPETS");
-      lines.push("  No direct text matches found for this term.");
       lines.push("");
+      lines.push("BEST FILES TO REVIEW FIRST");
+      lines.push("  No strong or moderate matches found for this term.");
+      lines.push("  Consider broadening the search term.");
     }
 
+    // Weak / indirect files
+    const weak = (data.file_results || []).filter(
+      (r) => r.match_tier === "weak",
+    );
+
+    if (weak.length) {
+      lines.push("");
+      lines.push("LOWER CONFIDENCE / INDIRECT MATCHES");
+      weak.forEach((r) => {
+        lines.push(`  [${escapeHtml(r.file_name)}]`);
+        lines.push(
+          `    Reason: ${escapeHtml(r.match_reason || "indirect or partial match only")}`,
+        );
+      });
+    }
+
+    // Aggregated entities
     if (data.all_classifications && data.all_classifications.length) {
-      lines.push("LIKELY TOPICS");
+      lines.push("");
+      lines.push("LIKELY TOPICS DETECTED");
       lines.push(
         "  " + data.all_classifications.map(escapeHtml).join(" \u00b7 "),
       );
-      lines.push("");
     }
 
     if (data.all_apns && data.all_apns.length) {
+      lines.push("");
       lines.push("POSSIBLE APNS FOUND");
       lines.push("  " + data.all_apns.map(escapeHtml).join(" \u00b7 "));
-      lines.push("");
     }
 
     if (data.all_drns && data.all_drns.length) {
+      lines.push("");
       lines.push("POSSIBLE DRNS FOUND");
       lines.push("  " + data.all_drns.map(escapeHtml).join(" \u00b7 "));
-      lines.push("");
     }
 
     if (data.all_dates && data.all_dates.length) {
+      lines.push("");
       lines.push("DATES FOUND");
       lines.push("  " + data.all_dates.map(escapeHtml).join(" \u00b7 "));
-      lines.push("");
     }
 
     if (data.all_keywords && data.all_keywords.length) {
+      lines.push("");
       lines.push("MAPPING KEYWORDS");
       lines.push(
         "  " + data.all_keywords.slice(0, 20).map(escapeHtml).join(" \u00b7 "),
       );
-      lines.push("");
     }
 
+    lines.push("");
     lines.push("\u2500".repeat(52));
     lines.push(
-      "\u26a0 Verify all findings against original files before use in production work.",
+      "\u26a0 Review source files to confirm. Verify all findings against originals before use in production work.",
     );
 
     panel.innerHTML = `
@@ -140,7 +168,6 @@
       </div>
     `;
   }
-
   // =========================
   // BUTTON VISIBILITY
   // Only show/hide — never inject/remove repeatedly.
