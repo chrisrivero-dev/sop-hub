@@ -2,68 +2,11 @@
 {% block content %}
 
 <style>
-    .search-summary-card {
-        background: #ffffff;
-        border: 1px solid #e1e4e8;
-        border-radius: 6px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        padding: 18px;
-        min-height: 220px;
-    }
-
-    .search-summary-title {
-        color: #526173;
-        font-size: 14px;
-        font-weight: 500;
-        margin-bottom: 12px;
-        text-transform: uppercase;
-    }
-
-    .summary-empty {
-        color: #4f5f72;
-        font-size: 15px;
-    }
-
-    .summary-selected-file {
-        font-size: 12px;
-        color: #5f6b7a;
-        margin-bottom: 10px;
-        word-break: break-all;
-    }
-
-    .summary-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 10px;
-    }
-
-    .summary-actions button {
-        border: 0;
-        border-radius: 6px;
-        padding: 8px 10px;
-        cursor: pointer;
-        background: #eef2ff;
-        color: #2636c9;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .summary-actions button:hover {
-        background: #dfe5ff;
-    }
-
-    .summary-output {
-        min-height: 180px;
-        max-height: 320px;
-        overflow: auto;
-        white-space: pre-wrap;
-        font-family: Consolas, monospace;
-        font-size: 12px;
-        background: #f6f8fa;
-        border: 1px solid #d8dee4;
-        border-radius: 6px;
-        padding: 10px;
+    #referencePreview {
+        position: sticky;
+        top: 16px;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
     }
 </style>
 
@@ -108,37 +51,18 @@
         Search across files and parceling examples to find the correct action.
     </p>
 
-    <!-- SELECTED FILE SUMMARY -->
-    <div id="selectedFileSummaryRoot" class="search-summary-card mb-6">
-        <div class="search-summary-title">Selected File Summary</div>
+    <!-- RESULTS + PREVIEW (2-col, stacks on small screens) -->
+    <div class="flex flex-col lg:flex-row gap-4 items-start">
 
-        <div id="searchSummaryEmpty" class="summary-empty">
-            Select a related file to summarize it.
+        <div id="resultsContainer" class="flex-1 min-w-0 space-y-4"></div>
+
+        <div id="referencePreview"
+            class="w-full lg:w-[460px] flex-shrink-0 p-4 border rounded bg-white shadow-sm min-h-[220px]">
+            <div class="text-sm text-gray-500 mb-2">DOCUMENT PREVIEW</div>
+            <div class="text-gray-400 text-sm">Select a file to preview.</div>
         </div>
 
-        <div id="searchSummaryPanel" style="display: none;">
-            <div id="searchSummarySelectedFile" class="summary-selected-file"></div>
-
-            <div class="summary-actions">
-                <button type="button" id="searchSummarizeFileBtn">
-                    Summarize File
-                </button>
-
-                <button type="button" id="searchExtractDetailsBtn">
-                    Extract Key Details
-                </button>
-
-                <button type="button" id="searchCopySummaryBtn">
-                    Copy Summary
-                </button>
-            </div>
-
-            <pre id="searchSummaryOutput" class="summary-output">No summary loaded.</pre>
-        </div>
     </div>
-
-    <!-- RESULTS ROOT -->
-    <div id="resultsContainer" class="space-y-4"></div>
 </div>
 
 <!-- ========================= -->
@@ -198,8 +122,7 @@
 <!-- ========================= -->
 <!-- SEARCH ENGINE (LOAD ONCE ONLY) -->
 <!-- ========================= -->
-<script src="/static/js/search_assistant.js?v=4"></script>
-<script src="/static/js/search_file_summary.js?v=1"></script>
-<<script src="/static/js/search_topic_summary.js?v=2"></script>
+<script src="/static/js/reference_preview.js?v=1"></script>
+<script src="/static/js/search_assistant.js?v=5"></script>
 
 {% endblock %}

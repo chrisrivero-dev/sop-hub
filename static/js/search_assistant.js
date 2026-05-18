@@ -23,45 +23,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function buildPreviewMarkup(path) {
-    const lowerPath = String(path || "").toLowerCase();
-    const isPdf = lowerPath.endsWith(".pdf");
-
-    if (isPdf) {
-      return `
-        <iframe
-          src="/preview?path=${encodeURIComponent(path)}"
-          class="w-full h-[650px] border rounded bg-white">
-        </iframe>
-      `;
-    }
-
-    return `
-      <img
-        src="/preview?path=${encodeURIComponent(path)}"
-        class="w-full border rounded shadow-sm bg-white"
-        alt="Document preview"
-        onerror="
-          this.onerror=null;
-          this.outerHTML='<div class=&quot;text-gray-500 text-sm&quot;>No preview available</div>';
-        ">
-    `;
-  }
-
-  function loadPreview(path) {
-    const previewPanel = document.getElementById("previewPanel");
-
-    if (!previewPanel || !path) {
-      return;
-    }
-
-    previewPanel.innerHTML = `
-      <div class="text-sm text-gray-500 mb-2">DOCUMENT PREVIEW</div>
-      ${buildPreviewMarkup(path)}
-      <div class="text-xs text-gray-400 mt-2 break-all">${escapeHtml(path)}</div>
-    `;
-  }
-
   function renderExamplesTable(examples) {
     if (!examples.length) {
       return "";
@@ -110,10 +71,6 @@ document.addEventListener("DOMContentLoaded", () => {
       ...new Set(examples.map((example) => example.action).filter(Boolean)),
     ];
 
-    if (!actions.length) {
-      return "";
-    }
-
     return `
       <div class="p-4 border rounded bg-white shadow-sm">
         <div class="text-sm text-gray-500 mb-2">RECOMMENDED ACTION</div>
@@ -127,10 +84,9 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
-  function renderRelatedFiles(files, fullWidth = false) {
-    const colClass = fullWidth ? "lg:col-span-2" : "";
+  function renderRelatedFiles(files) {
     let html = `
-      <div class="p-4 border rounded bg-white shadow-sm ${colClass}">
+      <div class="p-4 border rounded bg-white shadow-sm">
         <div class="text-sm text-gray-500 mb-2">RELATED FILES</div>
     `;
 
@@ -142,48 +98,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
     html += `<div class="max-h-72 overflow-y-auto">`;
 
-    files.slice(0, 10).forEach((file) => {
+    files.slice(0, 15).forEach((file) => {
       html += `
-        <div class="flex justify-between items-center border-b py-2 gap-3">
-          <a href="#"
-             class="select-file text-blue-700 font-semibold flex-1"
-             data-path="${escapeHtml(file.full_path)}"
-             data-file-path="${escapeHtml(file.full_path)}">
-            ${escapeHtml(file.name)}
-          </a>
-
-          <a href="#"
-             class="open-file text-xs text-gray-400 hover:text-blue-500 whitespace-nowrap"
-             data-path="${escapeHtml(file.full_path)}"
-             title="Preview / Open">
-            Preview
-          </a>
-
+        <div class="flex items-center border-b py-2 gap-2">
           <button
             type="button"
-            class="pin-btn text-lg leading-none"
+            class="pin-btn text-base font-bold leading-none flex-shrink-0"
             data-name="${escapeHtml(file.name)}"
             data-path="${escapeHtml(file.full_path)}"
             data-selected="false"
             title="Add to Reference Library"
-            style="color:#9CA3AF;">
-            ☆
+            style="color:#6B7280;">
+            +
           </button>
+
+          <a href="#"
+             class="preview-file text-blue-700 font-semibold shrink min-w-0 truncate"
+             data-path="${escapeHtml(file.full_path)}"
+             title="${escapeHtml(file.full_path)}">
+            ${escapeHtml(file.name)}
+          </a>
+
+          <a href="#"
+             class="open-file text-xs text-gray-500 hover:text-blue-600 whitespace-nowrap flex-shrink-0"
+             data-path="${escapeHtml(file.full_path)}"
+             title="Open source file">
+            Open File
+          </a>
         </div>
       `;
     });
 
     html += `</div></div>`;
     return html;
-  }
-
-  function renderPreviewPanel() {
-    return `
-      <div id="previewPanel" class="p-4 border rounded bg-white shadow-sm">
-        <div class="text-sm text-gray-500 mb-2">DOCUMENT PREVIEW</div>
-        <div class="text-gray-400 text-sm">Click Preview on a related file to load a preview.</div>
-      </div>
-    `;
   }
 
   async function togglePin(buttonEl) {
@@ -217,24 +164,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!data.success) {
         console.warn("Pin ignored or failed:", data);
-
-        if (data.ignored && data.reason === "generated_preview_asset") {
-          buttonEl.textContent = "\u2298";
-          buttonEl.title = "Preview image — pin the source file instead";
-
-          setTimeout(() => {
-            buttonEl.textContent = "\u2606";
-            buttonEl.title = "Add to Reference Library";
-          }, 2500);
-        }
-
         return;
       }
 
       if (data.pinned) {
         buttonEl.dataset.selected = "true";
-        buttonEl.style.color = "#facc15";
-        buttonEl.textContent = "★";
+        buttonEl.style.color = "#16a34a";
+        buttonEl.textContent = "✓";
 
         if (!selectedItems.find((item) => item.path === filePath)) {
           selectedItems.push({ name: fileName, path: filePath });
@@ -244,8 +180,6 @@ document.addEventListener("DOMContentLoaded", () => {
           await fetch(`/open-file?path=${encodeURIComponent(filePath)}`);
         }
 
-        loadPreview(filePath);
-
         setTimeout(() => {
           window.location.href = "/reference";
         }, 300);
@@ -254,8 +188,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       buttonEl.dataset.selected = "false";
-      buttonEl.style.color = "#9CA3AF";
-      buttonEl.textContent = "☆";
+      buttonEl.style.color = "#6B7280";
+      buttonEl.textContent = "+";
       selectedItems = selectedItems.filter((item) => item.path !== filePath);
     } catch (error) {
       console.error("PIN ERROR:", error);
@@ -265,9 +199,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function bindEvents() {
     selectedItems = [];
 
-    document.querySelectorAll(".select-file").forEach((link) => {
+    document.querySelectorAll(".preview-file").forEach((link) => {
+      const path = link.dataset.path;
+
       link.addEventListener("click", (event) => {
         event.preventDefault();
+        if (window.loadReferencePreview) window.loadReferencePreview(path);
+      });
+
+      link.addEventListener("mouseenter", () => {
+        if (window.loadReferencePreview) window.loadReferencePreview(path);
       });
     });
 
@@ -277,18 +218,13 @@ document.addEventListener("DOMContentLoaded", () => {
       link.addEventListener("click", async (event) => {
         event.preventDefault();
         await fetch(`/open-file?path=${encodeURIComponent(path)}`);
-        loadPreview(path);
-      });
-
-      link.addEventListener("mouseenter", () => {
-        loadPreview(path);
       });
     });
 
     document.querySelectorAll(".pin-btn").forEach((button) => {
       button.dataset.selected = "false";
-      button.style.color = "#9CA3AF";
-      button.textContent = "☆";
+      button.style.color = "#6B7280";
+      button.textContent = "+";
 
       button.addEventListener("click", async () => {
         await togglePin(button);
@@ -323,10 +259,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const files = Array.isArray(data.results) ? data.results : [];
       const examples = Array.isArray(data.examples) ? data.examples : [];
 
-      let html = `<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">`;
+      let html = "";
       html += renderRecommendedAction(examples);
-      html += renderRelatedFiles(files, examples.length === 0);
-      html += `</div>`;
+      html += renderRelatedFiles(files);
+      html += renderExamplesTable(examples);
 
       resultsContainer.innerHTML = html;
       bindEvents();
@@ -343,4 +279,16 @@ document.addEventListener("DOMContentLoaded", () => {
       runSearch();
     }
   });
+
+  const previewPanel = document.getElementById("referencePreview");
+  if (previewPanel) {
+    previewPanel.addEventListener("click", async (event) => {
+      const btn = event.target.closest(".open-original-from-preview");
+      if (btn) {
+        event.preventDefault();
+        const path = btn.dataset.path;
+        if (path) await fetch(`/open-file?path=${encodeURIComponent(path)}`);
+      }
+    });
+  }
 });
