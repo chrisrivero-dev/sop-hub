@@ -850,14 +850,17 @@ def launch_browser_once():
 @app.route("/")
 def index():
     recent = Recent.query.order_by(Recent.opened_at.desc()).limit(10).all()
-    return render_template("index.html", recent=recent)
-
-def is_index_empty():
-    with app.app_context():
-        try:
-            return FileIndex.query.count() == 0
-        except Exception:
-            return True
+    paths = [r.file_path for r in recent]
+    pinned_paths = set()
+    if paths:
+        pinned_paths = {
+            ref.file_path
+            for ref in Reference.query.filter(
+                Reference.file_path.in_(paths),
+                Reference.pinned == True
+            ).all()
+        }
+    return render_template("index.html", recent=recent, pinned_paths=pinned_paths)
 @app.route("/ping")
 def ping():
     print("🔥 PING HIT")
@@ -896,7 +899,12 @@ def search():
             "examples": [],
             "fallback_message": "Search failed."
         }), 500
-
+def is_index_empty():
+    try:
+        return FileIndex.query.first() is None
+    except Exception as exc:
+        print(f"⚠️ Could not check file index state: {exc}")
+        return True
 @app.route("/search-hub")
 def search_hub():
     first_time = is_index_empty()

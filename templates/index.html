@@ -22,7 +22,7 @@
   <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
 
     <div class="p-5 border rounded shadow bg-white hover:shadow-md cursor-pointer"
-         onclick="location.href='/reference';">
+      onclick="location.href='/reference';">
       <h3 class="font-bold mb-1 text-blue-700">📚 Reference Library</h3>
       <p class="text-gray-600 text-sm">
         Pin frequently used documents and notes for quick access.
@@ -30,10 +30,10 @@
     </div>
 
     <div class="p-5 border rounded shadow bg-white hover:shadow-md cursor-pointer"
-         onclick="location.href='/search-hub';">
+      onclick="location.href='/search-hub';">
       <h3 class="font-bold mb-1 text-blue-700">🔍 Search Hub</h3>
       <p class="text-gray-600 text-sm">
-        Search across all Q:\WORD files by name or inside content.
+        Search across Mapping Division reference files by name or keyword.
       </p>
     </div>
 
@@ -44,39 +44,33 @@
     <h2 class="text-xl font-bold mb-4">Recently Viewed</h2>
 
     {% if recent %}
-      <div class="space-y-3">
-        {% for item in recent %}
-          <div class="p-3 bg-white shadow rounded border hover:bg-gray-50 flex items-center justify-between">
+    <div class="space-y-3">
+      {% for item in recent %}
+      <div class="p-3 bg-white shadow rounded border hover:bg-gray-50 flex items-center justify-between gap-4">
 
-            <!-- LEFT SIDE -->
-            <div class="cursor-pointer open-file"
-                 data-path="{{ item.file_path }}">
-              <div class="font-semibold">{{ item.file_name }}</div>
-              <div class="text-sm text-gray-500">{{ item.folder }}</div>
-            </div>
+        <!-- LEFT SIDE -->
+        <div class="cursor-pointer open-file min-w-0 flex-1" data-path="{{ item.file_path }}">
+          <div class="font-semibold truncate">{{ item.file_name }}</div>
+          <div class="text-sm text-gray-500 truncate">{{ item.folder }}</div>
+        </div>
 
-            <!-- RIGHT SIDE: PIN STAR -->
-            <span class="pin-star cursor-pointer text-2xl ml-4"
-                  data-id="{{ item.id }}"
-                  data-name="{{ item.file_name }}"
-                  data-path="{{ item.file_path }}"
-                  data-folder="{{ item.folder }}">
+        <!-- RIGHT SIDE: PIN CONTROL -->
+        <span class="pin-star cursor-pointer text-xl font-bold flex-shrink-0" data-name="{{ item.file_name }}"
+          data-path="{{ item.file_path }}" data-folder="{{ item.folder or '' }}" title="Add to Reference Library"
+          style="color:{% if item.file_path in pinned_paths %}#16a34a{% else %}#6B7280{% endif %};">
+          {% if item.file_path in pinned_paths %}
+          ✓
+          {% else %}
+          +
+          {% endif %}
+        </span>
 
-              {% if item.ref_id %}
-                ★
-              {% else %}
-                ☆
-              {% endif %}
-
-            </span>
-
-          </div>
-        {% endfor %}
       </div>
+      {% endfor %}
+    </div>
     {% else %}
-      <p class="text-gray-500 text-sm">No recent files yet.</p>
+    <p class="text-gray-500 text-sm">No recently viewed files yet.</p>
     {% endif %}
-
   </div>
 
 </div>
