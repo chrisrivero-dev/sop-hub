@@ -1,60 +1,60 @@
 console.log("🌟 pin.js loaded globally");
 
 document.addEventListener("click", async (e) => {
+  // Only run on pin-star clicks
+  if (!e.target.classList.contains("pin-star")) return;
 
-    // Only run on pin-star clicks
-    if (!e.target.classList.contains("pin-star")) return;
+  e.preventDefault();
+  e.stopPropagation();
 
-    // 🛑 FIX: Prevent the star click from triggering parent .open-file click
-    e.stopPropagation();
+  // Do NOT run on Search Hub — search_assistant.js handles it there
+  if (window.location.pathname === "/search-hub") {
+    return;
+  }
 
-    // 🚫 IMPORTANT: Do NOT run pin.js on Search Hub (search.js handles it)
-    if (window.location.pathname === "/search-hub") {
-        return;
-    }
+  const star = e.target;
 
-    const star = e.target;
+  const name = star.dataset.name;
+  const path = star.dataset.path;
+  const folder = star.dataset.folder;
 
-    const refId  = star.dataset.id;
-    const name   = star.dataset.name;
-    const path   = star.dataset.path;
-    const folder = star.dataset.folder;
+  console.log("⭐ Toggling pin for:", name);
 
-    console.log("⭐ Toggling pin for:", name);
+  const resp = await fetch("/toggle-pin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      file_name: name,
+      file_path: path,
+      folder: folder,
+    }),
+  });
 
-    // Send toggle to Flask
-    const resp = await fetch(`/toggle-pin/${refId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            file_name: name,
-            file_path: path,
-            folder: folder
-        })
-    });
+  let data;
+  try {
+    data = await resp.json();
+  } catch (err) {
+    console.error("❌ toggle-pin: invalid JSON response", err);
+    return;
+  }
 
-    let data;
-    try {
-        data = await resp.json();
-    } catch (err) {
-        console.error("❌ toggle-pin: invalid JSON response", err);
-        return;
-    }
+  if (!data.success) {
+    console.error("❌ toggle-pin failed:", data.error);
+    return;
+  }
 
-    if (!data.success) {
-        console.error("❌ toggle-pin failed:", data.error);
-        return;
-    }
+  if (data.pinned) {
+    star.textContent = "✓";
+    star.style.color = "#16a34a";
+  } else {
+    star.textContent = "+";
+    star.style.color = "#6B7280";
+  }
 
-    // Flip the star icon and update ID
-    star.textContent = data.pinned ? "★" : "☆";
-    star.dataset.id = data.ref_id;
+  const autoOpen = document.getElementById("autoOpenToggle");
 
-    // Auto-open — ONLY for pages that use pin.js (NOT search-hub)
-    const autoOpen = document.getElementById("autoOpenToggle");
-
-    if (autoOpen && autoOpen.checked && data.pinned) {
-        console.log("🚀 AUTO-OPEN TRIGGERED for:", path);
-        await fetch(`/open-file?path=${encodeURIComponent(path)}`);
-    }
+  if (autoOpen && autoOpen.checked && data.pinned) {
+    console.log("🚀 AUTO-OPEN TRIGGERED for:", path);
+    await fetch(`/open-file?path=${encodeURIComponent(path)}`);
+  }
 });
