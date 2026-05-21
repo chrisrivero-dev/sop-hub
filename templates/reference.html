@@ -3,12 +3,18 @@
 
 <h1 class="text-2xl font-bold mb-6">Reference Library</h1>
 
-<div class="flex items-center gap-3 mb-4">
-    <input id="refSearch" type="text" placeholder="Search your reference library..." class="border p-2 rounded flex-1">
+<div class="flex items-start gap-3 mb-4">
+    <input id="refSearch" type="text" placeholder="Search your reference library..."
+        class="border p-2 rounded flex-1 mt-0.5">
 
-    <button id="addGroupBtn" class="bg-green-600 text-white px-3 py-2 rounded">
-        + Add New Group
-    </button>
+    <div class="flex flex-col">
+        <button id="addGroupBtn" class="bg-green-600 text-white px-3 py-2 rounded text-sm">
+            + Add New Group
+        </button>
+        <span class="text-xs text-gray-400 mt-0.5 leading-tight">
+            Creates a group for organizing pinned files.
+        </span>
+    </div>
 
     <button id="exportBtn" class="bg-blue-600 text-white px-3 py-2 rounded">
         ⬇ Export
@@ -45,47 +51,49 @@
             <!-- GROUP SECTION -->
             <div class="ref-group-section border rounded bg-white shadow-sm overflow-hidden">
 
-                                <!-- GROUP HEADER -->
-                                {% set group_descriptions = {
-                                "Procedures": "Official Mapping Division procedures and workflow references.",
-                                "Cut Sheets": "Cut sheet templates, examples, and processing references.",
-                                "Tracts": "Tract map processing, status tracking, and related references.",
-                                "Parcel Maps": "Parcel map processing, PM cuts, and production references.",
-                                "QA": "Review, validation, and quality-control references.",
-                                "General": "General Mapping Division reference files.",
-                                "Ungrouped": "Files not yet assigned to a group."
-                                } %}
-                                <div class="group-header bg-gray-100 border-b cursor-pointer px-3 py-2" data-group="{{ group }}">
-                                    <div class="flex justify-between items-center">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <span class="group-arrow text-gray-500 text-xs">▼</span>
-                                            <span class="font-semibold text-gray-700 text-sm">{{ group }}</span>
-                                            <span class="text-xs text-gray-400">({{ items|length }})</span>
-                                            {% if group in group_descriptions %}
-                                            <span class="ref-group-description">{{ group_descriptions[group] }}</span>
-                                            {% endif %}
-                                        </div>
-                                        {% if group not in built_in %}
-                                        <button class="delete-group text-red-400 hover:text-red-600 text-sm" type="button"
-                                            data-group-name="{{ group }}">
-                                            🗑
-                                        </button>
-                                        {% endif %}
-                                    </div>
-                                </div>
+                <!-- GROUP HEADER -->
+                {% set group_descriptions = {
+                "Procedures": "Official Mapping Division procedures and workflow references.",
+                "Cut Sheets": "Cut sheet templates, examples, and processing references.",
+                "Tracts": "Tract map processing, status tracking, and related references.",
+                "Parcel Maps": "Parcel map processing, PM cuts, and production references.",
+                "QA": "Review, validation, and quality-control references.",
+                "General": "General Mapping Division reference files.",
+                "Ungrouped": "Files not yet assigned to a group."
+                } %}
+
+                <div class="group-header bg-gray-100 border-b cursor-pointer px-3 py-2" data-group="{{ group }}">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="group-arrow text-gray-500 text-xs">▼</span>
+                            <span class="font-semibold text-gray-700 text-sm">{{ group }}</span>
+                            <span class="text-xs text-gray-400">({{ items|length }})</span>
+                            {% if group in group_descriptions %}
+                            <span class="ref-group-description">{{ group_descriptions[group] }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if group not in built_in %}
+                        <button class="delete-group text-red-400 hover:text-red-600 text-sm" type="button"
+                            data-group-name="{{ group }}">
+                            🗑
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
 
                 <!-- GROUP BODY -->
                 <div class="group-body" id="group-body-{{ group.replace(' ', '-') }}" data-group="{{ group }}">
 
                     {% for item in items %}
-                    {% set notes_preview = item.notes.splitlines()[0][:80] if item.notes else 'No notes yet.' %}
+                    {% set notes_preview = item.notes.splitlines()[0][:80] if item.notes else '' %}
 
                     <!-- REFERENCE ITEM -->
                     <div class="ref-row item-row border-b last:border-b-0" id="row-{{ item.id }}"
                         data-name="{{ item.display_name or item.file_name }}" data-file="{{ item.file_name }}">
 
                         <!-- COLLAPSED SUMMARY ROW -->
-                        <div class="ref-row-summary flex items-center gap-2 px-3 py-2 hover:bg-gray-50">
+                        <div class="ref-row-summary flex items-start gap-2 px-3 py-2 hover:bg-gray-50">
 
                             <!-- PIN -->
                             <span
@@ -95,32 +103,34 @@
                                 {{ "★" if item.pinned else "☆" }}
                             </span>
 
-                            <!-- DISPLAY NAME (editable inline) -->
-                            <input class="display-input ref-display-name flex-1 min-w-0" data-id="{{ item.id }}"
-                                value="{{ item.display_name or item.file_name }}" title="{{ item.file_path }}">
+                            <!-- CONTENT: file name + actions packed together, notes below -->
+                            <div class="min-w-0">
 
-                            <!-- GROUP BADGE (read-only) -->
-                            <span class="ref-group-badge">{{ item.group or 'Ungrouped' }}</span>
+                                <!-- TOP ROW: input + buttons packed together -->
+                                <div class="flex items-center gap-1 flex-wrap">
+                                    <input class="display-input ref-display-name" style="max-width: 260px;"
+                                        data-id="{{ item.id }}" value="{{ item.display_name or item.file_name }}"
+                                        title="{{ item.file_path }}">
 
-                            <!-- NOTES PREVIEW (read-only, first line) -->
-                            <span class="ref-notes-preview hidden xl:block">{{ notes_preview }}</span>
+                                    <button type="button" class="open-file ref-details-btn"
+                                        data-path="{{ item.file_path }}" title="{{ item.file_path }}">
+                                        Open File
+                                    </button>
 
-                            <!-- ACTION BUTTONS -->
-                            <div class="flex items-center gap-1 flex-shrink-0">
-                                <button type="button" class="open-file ref-action-btn" data-path="{{ item.file_path }}"
-                                    title="Open original file">📄</button>
+                                    <button type="button" class="open-folder ref-details-btn"
+                                        data-path="{{ item.file_path }}" title="Open containing folder">
+                                        Open Folder
+                                    </button>
 
-                                <button type="button" class="open-folder ref-action-btn"
-                                    data-path="{{ item.file_path }}" title="Open containing folder">📂</button>
+                                    <button type="button" class="details-toggle ref-details-btn">
+                                        Details ⌄
+                                    </button>
+                                </div>
 
-                                <button type="button" class="copy-workspace ref-action-btn"
-                                    data-path="{{ item.file_path }}" data-name="{{ item.file_name }}"
-                                    data-group="{{ item.group or 'Ungrouped' }}"
-                                    title="Copy to My Workspace">📥</button>
+                                <!-- NOTE PREVIEW -->
+                                <div class="ref-notes-preview" style="{{ '' if item.notes else 'display:none' }}"
+                                    title="{{ item.notes or '' }}">{{ notes_preview }}</div>
 
-                                <button type="button" class="details-toggle ref-details-btn">
-                                    Details ⌄
-                                </button>
                             </div>
 
                         </div>
@@ -134,11 +144,13 @@
                                     <label class="ref-detail-label">Group</label>
                                     <select class="group-select border rounded text-sm p-1" data-id="{{ item.id }}">
                                         {% for g in built_in %}
-                                        <option value="{{ g }}" {{ 'selected' if item.group==g else '' }}>{{ g }}
+                                        <option value="{{ g }}" {{ 'selected' if item.group==g else '' }}>
+                                            {{ g }}
                                         </option>
                                         {% endfor %}
                                         {% for g in custom_groups if g not in built_in %}
-                                        <option value="{{ g }}" {{ 'selected' if item.group==g else '' }}>{{ g }}
+                                        <option value="{{ g }}" {{ 'selected' if item.group==g else '' }}>
+                                            {{ g }}
                                         </option>
                                         {% endfor %}
                                     </select>
@@ -178,7 +190,7 @@
         </div>
     </div>
 
-    <!-- RIGHT: PREVIEW PANEL (unchanged) -->
+    <!-- RIGHT: PREVIEW PANEL -->
     <div id="referencePreview"
         class="p-4 border rounded bg-white shadow-sm h-[calc(100vh-180px)] overflow-auto sticky top-6 self-start">
         <div class="text-sm text-gray-500 mb-2">DOCUMENT PREVIEW</div>

@@ -452,7 +452,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const preview = row?.querySelector(".ref-notes-preview");
       if (preview) {
         const firstLine = textarea.value.split("\n")[0].slice(0, 80);
-        preview.textContent = firstLine || "No notes yet.";
+        preview.textContent = firstLine;
+        preview.style.display = firstLine ? "" : "none";
       }
     });
   });
