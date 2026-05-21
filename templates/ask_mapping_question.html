@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Ask a Mapping Question — SOP Hub{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold mb-1">Ask a Mapping Question</h1>
+<p class="text-sm text-gray-500 mb-5">Search approved Mapping guidance. This does not generate new answers.</p>
+
+<div class="mb-5 max-w-xl sc-search-wrapper">
+    <input id="scSearch" type="text" placeholder="Type a Mapping question or keyword..."
+        class="border p-2 rounded w-full text-sm" autocomplete="off">
+    <div id="scSuggestions" class="sc-suggestions hidden"></div>
+    <p class="text-xs text-gray-400 mt-1">Examples: bad legal, do not create transfer, tract multiple owners</p>
+</div>
+
+<div id="scResults" class="space-y-4"></div>
+
+<script src="{{ url_for('static', filename='js/scenario_cards.js') }}?v=2"></script>
+{% endblock %}
