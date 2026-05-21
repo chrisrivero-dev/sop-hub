@@ -108,9 +108,12 @@
 
                                 <!-- TOP ROW: input + buttons packed together -->
                                 <div class="flex items-center gap-1 flex-wrap">
-                                    <input class="display-input ref-display-name" style="max-width: 260px;"
-                                        data-id="{{ item.id }}" value="{{ item.display_name or item.file_name }}"
-                                        title="{{ item.file_path }}">
+                                                                <!-- DISPLAY NAME (editable inline) -->
+                                                                <input class="display-input ref-display-name flex-1 min-w-0" data-id="{{ item.id }}"
+                                                                    value="{{ item.display_name or item.file_name }}" title="{{ item.file_path }}">
+                                                                
+                                                                <!-- FILE GUIDANCE STATUS PILL (populated by file_guidance.js) -->
+                                                                <span class="fg-status-pill" data-fg-path="{{ item.file_path }}" style="display:none"></span>
 
                                     <button type="button" class="open-file ref-details-btn"
                                         data-path="{{ item.file_path }}" title="{{ item.file_path }}">
@@ -165,7 +168,11 @@
                                 </div>
 
                                 <!-- FILE INFO -->
-                                <div class="text-xs text-gray-400 space-y-0.5">
+                                                                <!-- FILE GUIDANCE SECTION (rendered by file_guidance.js) -->
+                                                                <div class="fg-section" data-fg-path="{{ item.file_path }}"></div>
+                                                                
+                                                                <!-- FILE INFO -->
+                                                                <div class="text-xs text-gray-400 space-y-0.5">
                                     <div>
                                         <span class="font-medium text-gray-500">File:</span>
                                         {{ item.file_name }}
@@ -204,5 +211,6 @@
 <script src="{{ url_for('static', filename='js/reference_preview.js') }}?v=1"></script>
 <script src="{{ url_for('static', filename='js/reference.js') }}?v=20011"></script>
 <script src="{{ url_for('static', filename='js/reference_autosave.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/file_guidance.js') }}?v=1"></script>
 
 {% endblock %}
