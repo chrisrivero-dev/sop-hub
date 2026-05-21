@@ -72,40 +72,38 @@
                     <!-- REFERENCE ITEM -->
                     <div class="ref-row item-row border-b last:border-b-0" id="row-{{ item.id }}"
                         data-name="{{ item.display_name or item.file_name }}" data-file="{{ item.file_name }}">
-
-                                                <!-- COLLAPSED SUMMARY ROW -->
-                                                <div class="ref-row-summary flex items-center gap-2 px-3 py-2 hover:bg-gray-50">
-                                                
-                                                    <!-- DISPLAY NAME + NOTES (click = preview, dblclick = open) -->
-                                                    <div class="flex-1 min-w-0 flex flex-col">
-                                                        <span class="ref-display-name truncate text-sm text-gray-800 font-medium cursor-pointer"
-                                                            data-path="{{ item.file_path }}" title="{{ item.file_path }}">{{ item.display_name or item.file_name
-                                                            }}</span>
-                                                        <span class="ref-notes-preview text-xs text-gray-400 truncate">{{ notes_preview }}</span>
-                                                    </div>
-                                                
-                                                    <!-- FILE GUIDANCE STATUS PILL (populated by file_guidance.js) -->
-                                                    <span class="fg-status-pill" data-fg-path="{{ item.file_path }}" style="display:none"></span>
-                                                
-                                                    <!-- GROUP BADGE (read-only) -->
-                                                    <span class="ref-group-badge">{{ item.group or 'Ungrouped' }}</span>
-                                                
-                                                    <!-- ACTION BUTTONS -->
-                                                    <div class="flex items-center gap-1 flex-shrink-0">
-                                                        <button type="button"
-                                                            class="open-folder ref-action-btn text-sm text-gray-500 hover:text-blue-600 px-2 py-0.5 border rounded"
-                                                            data-path="{{ item.file_path }}" title="Open containing folder">Open Folder</button>
-                                                
-                                                        <button type="button" class="details-toggle ref-details-btn">
-                                                            Details ⌄
-                                                        </button>
-                                                
-                                                        <button type="button" class="unpin-btn ref-action-btn text-red-400 hover:text-red-600" data-id="{{ item.id }}"
-                                                            data-path="{{ item.file_path }}" data-name="{{ item.display_name or item.file_name }}"
-                                                            title="Remove from Reference Library">✕</button>
-                                                    </div>
-                                                
-                                                </div>
+                        <!-- COLLAPSED SUMMARY ROW -->
+                        <div class="ref-row-summary flex items-center gap-2 px-3 py-2 hover:bg-gray-50">
+                        
+                            <!-- DISPLAY NAME + NOTES (click = preview, dblclick = open) -->
+                            <div class="flex-1 min-w-0 flex flex-col">
+                                <span class="ref-display-name truncate text-sm text-gray-800 font-medium cursor-pointer"
+                                    data-path="{{ item.file_path }}" title="{{ item.file_path }}">{{ item.display_name or item.file_name
+                                    }}</span>
+                                <span class="ref-notes-preview text-xs text-gray-400 truncate">{{ notes_preview }}</span>
+                            </div>
+                        
+                            <!-- FILE GUIDANCE STATUS PILL (populated by file_guidance.js) -->
+                            <span class="fg-status-pill" data-fg-path="{{ item.file_path }}" style="display:none"></span>
+                        
+                            <!-- GROUP BADGE (read-only) -->
+                            <span class="ref-group-badge">{{ item.group or 'Ungrouped' }}</span>
+                        
+                            <!-- ACTION BUTTONS -->
+                            <div class="flex items-center gap-1 flex-shrink-0">
+                                <button type="button"
+                                    class="open-folder ref-action-btn text-sm text-gray-500 hover:text-blue-600 px-2 py-0.5 border rounded"
+                                    data-path="{{ item.file_path }}" title="Open containing folder">Open Folder</button>
+                        
+                                <button type="button" class="details-toggle ref-details-btn">
+                                    Details ⌄
+                                </button>
+                        
+                                <button type="button" class="unpin-btn ref-action-btn text-red-400 hover:text-red-600" data-id="{{ item.id }}"
+                                    data-path="{{ item.file_path }}" data-name="{{ item.display_name or item.file_name }}"
+                                    title="Remove from Reference Library">✕</button>
+                            </div>
+                        
                         </div>
 
                         <!-- EXPANDED DETAIL PANEL -->
