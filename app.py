@@ -125,7 +125,9 @@ app = Flask(
 )
 app.register_blueprint(file_summary_bp)
 from routes.file_guidance_routes import file_guidance_bp
+from routes.scenario_card_routes import scenario_card_bp
 app.register_blueprint(file_guidance_bp)
+app.register_blueprint(scenario_card_bp)
 app.register_blueprint(topic_summary_bp)
 
 # ======================================================
@@ -218,7 +220,8 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 
 db.init_app(app)
 migrate.init_app(app, db)
-from models.file_guidance import FileGuidance  # noqa: F401 — Migrate discovery
+from models.file_guidance import FileGuidance      # noqa: F401 — Flask-Migrate discovery
+from models.scenario_card import ScenarioCard      # noqa: F401 — Flask-Migrate discovery
 
 
 
