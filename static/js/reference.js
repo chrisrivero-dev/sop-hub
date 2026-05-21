@@ -6,7 +6,7 @@
 ===================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("REFERENCE_JS_LOADED_V20010");
+  console.log("REFERENCE_JS_LOADED_V20012");
 
   // =========================
   // HTML ESCAPE HELPER
@@ -43,16 +43,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (isHidden) {
         groupBody.classList.remove("hidden");
-
-        if (arrow) {
-          arrow.textContent = "▼";
-        }
+        if (arrow) arrow.textContent = "▼";
       } else {
         groupBody.classList.add("hidden");
-
-        if (arrow) {
-          arrow.textContent = "▶";
-        }
+        if (arrow) arrow.textContent = "▶";
       }
     });
   });
@@ -62,122 +56,39 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
   document.addEventListener("click", async (e) => {
     // =========================
-    // PIN / UNPIN
+    // UNPIN (far-right ✕ button with confirmation)
     // =========================
-    const pinBtn = e.target.closest(".pin-star");
+    const unpinBtn = e.target.closest(".unpin-btn");
 
-    if (pinBtn) {
-      const fileName = pinBtn.dataset.name;
-      const filePath = pinBtn.dataset.path;
+    if (unpinBtn) {
+      const name = unpinBtn.dataset.name || "this file";
+      if (!confirm(`Remove "${name}" from Reference Library?`)) return;
+
+      const filePath = unpinBtn.dataset.path;
+      const fileName = unpinBtn.dataset.name;
 
       if (!filePath) return;
 
       try {
         const resp = await fetch("/toggle-pin", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             file_name: fileName,
             file_path: filePath,
             folder: "",
           }),
         });
-
         const data = await resp.json();
 
-        if (!data.success) {
-          console.error("toggle-pin failed:", data);
-          return;
-        }
-
-        if (data.pinned) {
-          pinBtn.textContent = "★";
-          pinBtn.classList.add("text-yellow-500");
-        } else {
-          pinBtn.textContent = "☆";
-          pinBtn.classList.remove("text-yellow-500");
-
-          const row = pinBtn.closest(".ref-row");
+        if (data.success) {
+          const row = unpinBtn.closest(".ref-row");
           if (row) row.remove();
-        }
-      } catch (err) {
-        console.error("PIN ERROR:", err);
-      }
-
-      return;
-    }
-
-    // =========================
-    // COPY TO WORKSPACE
-    // =========================
-    const copyBtn = e.target.closest(".copy-workspace");
-
-    if (copyBtn) {
-      if (copyBtn.dataset.busy === "true") {
-        return;
-      }
-
-      copyBtn.dataset.busy = "true";
-      copyBtn.disabled = true;
-
-      const filePath = copyBtn.dataset.path;
-      const groupName = copyBtn.dataset.group || "Ungrouped";
-
-      if (!filePath) {
-        console.error("COPY ERROR: missing file path");
-        copyBtn.dataset.busy = "false";
-        copyBtn.disabled = false;
-        return;
-      }
-
-      const originalText = copyBtn.textContent;
-
-      try {
-        copyBtn.textContent = "⏳";
-
-        const resp = await fetch("/copy-to-workspace", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            file_path: filePath,
-            group: groupName,
-          }),
-        });
-
-        const data = await resp.json();
-
-        console.log("COPY TO WORKSPACE RESPONSE:", data);
-
-        if (!data.success) {
-          copyBtn.textContent = "⚠";
-          copyBtn.title = data.message || "Copy failed";
-          copyBtn.dataset.busy = "false";
-          copyBtn.disabled = false;
-          return;
-        }
-
-        if (data.copied) {
-          copyBtn.textContent = "✅";
-          copyBtn.title = "Copied to workspace";
         } else {
-          copyBtn.textContent = "✔";
-          copyBtn.title = "Already exists in workspace";
+          console.error("unpin failed:", data);
         }
-
-        setTimeout(() => {
-          copyBtn.textContent = originalText;
-          copyBtn.dataset.busy = "false";
-          copyBtn.disabled = false;
-        }, 2000);
       } catch (err) {
-        console.error("COPY TO WORKSPACE ERROR:", err);
-        copyBtn.textContent = "⚠";
-        copyBtn.dataset.busy = "false";
-        copyBtn.disabled = false;
+        console.error("UNPIN ERROR:", err);
       }
 
       return;
@@ -190,15 +101,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (previewOpenBtn) {
       const path = previewOpenBtn.dataset.path;
-
       if (!path) return;
-
       try {
         await fetch(`/open-file?path=${encodeURIComponent(path)}`);
       } catch (err) {
         console.error("OPEN ORIGINAL FROM PREVIEW ERROR:", err);
       }
-
       return;
     }
 
@@ -209,15 +117,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (folderBtn) {
       const path = folderBtn.dataset.path;
-
       if (!path) return;
-
       try {
         await fetch(`/open-folder?path=${encodeURIComponent(path)}`);
       } catch (err) {
         console.error("OPEN FOLDER ERROR:", err);
       }
-
       return;
     }
 
@@ -240,7 +145,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       return;
     }
-
     // =========================
     // DETAILS TOGGLE
     // =========================
@@ -263,7 +167,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const row = e.target.closest(".ref-row");
 
     if (row) {
-      const path = row.querySelector(".open-file")?.dataset.path;
+      const path =
+        row.querySelector(".ref-display-name")?.dataset.path ||
+        row.querySelector(".open-file")?.dataset.path;
 
       if (path) {
         window.loadReferencePreview?.(path);
@@ -304,7 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("Unexpected error deleting group.");
       }
     }
-  });
+  };);
 
   // =========================
   // SEARCH / FILTER
@@ -452,9 +358,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const preview = row?.querySelector(".ref-notes-preview");
       if (preview) {
         const firstLine = textarea.value.split("\n")[0].slice(0, 80);
-        preview.textContent = firstLine;
-        preview.style.display = firstLine ? "" : "none";
+        preview.textContent = firstLine || "No notes yet.";
       }
     });
+  });
+
+  // =========================
+  // FILENAME DBLCLICK → OPEN FILE
+  // =========================
+  document.addEventListener("dblclick", async (e) => {
+    const nameSpan = e.target.closest(".ref-display-name");
+    if (!nameSpan) return;
+    const path = nameSpan.dataset.path;
+    if (!path) return;
+    try {
+      await fetch(`/open-file?path=${encodeURIComponent(path)}`);
+    } catch (err) {
+      console.error("DBLCLICK OPEN ERROR:", err);
+    }
   });
 });
