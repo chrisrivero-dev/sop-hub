@@ -5,8 +5,7 @@ print("🔥 RUNNING APP.PY FROM:", __file__)
 # IMPORTS
 # ======================================================
 from flask import Flask, render_template, request, jsonify, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from extensions import db, migrate
 from datetime import datetime
 from services.workspace_service import copy_reference_to_workspace
 from services.excel_preview_service import build_excel_preview
@@ -125,6 +124,8 @@ app = Flask(
     template_folder=template_dir
 )
 app.register_blueprint(file_summary_bp)
+from routes.file_guidance_routes import file_guidance_bp
+app.register_blueprint(file_guidance_bp)
 app.register_blueprint(topic_summary_bp)
 
 # ======================================================
@@ -215,8 +216,9 @@ os.makedirs(INSTANCE_DIR, exist_ok=True)
 DB_PATH = os.path.join(INSTANCE_DIR, "sop.db")
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+db.init_app(app)
+migrate.init_app(app, db)
+from models.file_guidance import FileGuidance  # noqa: F401 — Migrate discovery
 
 
 
