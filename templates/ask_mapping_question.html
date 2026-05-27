@@ -2,56 +2,133 @@
 {% block title %}Mapping Q&A Board — SOP Hub{% endblock %}
 {% block content %}
 
-<div class="mb-5">
-    <h1 class="text-2xl font-bold">Mapping Q&A Board</h1>
-    <p class="text-sm text-gray-400 mt-1">Approved guidance from senior technicians. Search or browse by category.</p>
-</div>
-
-<!-- TOOLBAR -->
-<div class="flex flex-col sm:flex-row gap-3 mb-5 items-start sm:items-center">
-    <div class="sc-search-wrapper flex-1 max-w-xl relative">
-        <input id="scSearch" type="text" placeholder="Search questions, keywords, or tags..."
-            class="border p-2 rounded w-full text-sm" autocomplete="off">
-        <div id="scSuggestions" class="sc-suggestions hidden"></div>
-    </div>
-
-    <!-- FILTERS -->
-    <div class="flex gap-1 flex-shrink-0" id="scFilters">
-        <button class="sc-filter-btn sc-filter-active" data-filter="all">All</button>
-        <button class="sc-filter-btn" data-filter="answered">Answered</button>
-        <button class="sc-filter-btn" data-filter="open">Open</button>
-    </div>
-</div>
-
-<!-- ANSWERED SECTION -->
-<div id="scAnsweredSection">
-    <div class="flex items-center gap-2 mb-3">
-        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Answered</span>
-        <span id="scAnsweredCount" class="text-xs text-gray-400"></span>
-    </div>
-    <div id="scResults" class="space-y-3"></div>
-</div>
-
-<!-- OPEN QUESTIONS SECTION -->
-<div id="scOpenSection" class="mt-8">
-    <div class="flex items-center gap-2 mb-3">
-        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Open Questions</span>
-    </div>
-    <div class="border border-dashed border-gray-300 rounded p-5 text-sm text-gray-400 bg-gray-50">
-        Open questions will appear here once the Q&amp;A workflow is enabled.
-    </div>
-</div>
-
 <style>
+    .qa-section-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #9ca3af;
+    }
+
+    .qa-question-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        background: white;
+        padding: 0.875rem 1rem;
+    }
+
+    .qa-question-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .qa-question-body {
+        font-size: 0.85rem;
+        color: #374151;
+        margin-top: 0.25rem;
+    }
+
+    .qa-meta {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        margin-top: 0.25rem;
+    }
+
+    .qa-answer {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        padding: 0.625rem 0.75rem;
+        margin-top: 0.5rem;
+    }
+
+    .qa-answer-best {
+        background: #f0fdf4;
+        border-color: #86efac;
+    }
+
+    .qa-answer-body {
+        font-size: 0.85rem;
+        color: #1f2937;
+        white-space: pre-wrap;
+    }
+
+    .qa-badge-open {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.5rem;
+        border-radius: 9999px;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-weight: 600;
+    }
+
+    .qa-badge-answered {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.5rem;
+        border-radius: 9999px;
+        background: #dcfce7;
+        color: #15803d;
+        font-weight: 600;
+    }
+
+    .qa-best-badge {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.5rem;
+        border-radius: 9999px;
+        background: #dcfce7;
+        color: #15803d;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    .qa-approved-badge {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.5rem;
+        border-radius: 9999px;
+        background: #fef9c3;
+        color: #854d0e;
+        font-weight: 600;
+        margin-left: 0.25rem;
+    }
+
+    .qa-category {
+        font-size: 0.72rem;
+        padding: 0.1rem 0.5rem;
+        border-radius: 0.25rem;
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .qa-no-answers {
+        font-size: 0.8rem;
+        color: #9ca3af;
+        padding: 0.375rem 0;
+    }
+
+    .qa-actions {
+        margin-top: 0.625rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #f3f4f6;
+    }
+
+    .qa-inline-form {
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+    }
+
     .sc-filter-btn {
-        padding: 0.3rem 0.85rem;
+        padding: 0.25rem 0.75rem;
         border-radius: 9999px;
         border: 1px solid #d1d5db;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         color: #6b7280;
         background: white;
         cursor: pointer;
-        transition: background 0.15s, color 0.15s;
     }
 
     .sc-filter-btn:hover {
@@ -69,5 +146,81 @@
     }
 </style>
 
-<script src="{{ url_for('static', filename='js/scenario_cards.js') }}?v=3"></script>
+<!-- HEADER -->
+<div class="mb-4">
+    <h1 class="text-2xl font-bold">Mapping Q&amp;A Board</h1>
+    <p class="text-sm text-gray-400 mt-1">Approved guidance and open questions from the Mapping Division.</p>
+</div>
+
+<!-- TOOLBAR -->
+<div class="flex flex-col sm:flex-row gap-3 mb-5 items-start sm:items-center">
+    <div class="sc-search-wrapper relative flex-1 max-w-xl">
+        <input id="scSearch" type="text" placeholder="Search questions, answers, or keywords..."
+            class="border p-2 rounded w-full text-sm" autocomplete="off">
+        <div id="scSuggestions" class="sc-suggestions hidden"></div>
+    </div>
+
+    <div id="scFilters" class="flex gap-1 flex-shrink-0">
+        <button class="sc-filter-btn sc-filter-active" data-filter="all">All</button>
+        <button class="sc-filter-btn" data-filter="open">Open</button>
+        <button class="sc-filter-btn" data-filter="answered">Answered</button>
+    </div>
+
+    <button id="qaAskBtn"
+        class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 whitespace-nowrap flex-shrink-0">
+        + Ask a Question
+    </button>
+</div>
+
+<!-- ASK FORM -->
+<div id="qaAskForm" style="display:none;" class="mb-5 p-4 border rounded bg-white shadow-sm">
+    <div class="text-sm font-semibold text-gray-700 mb-3">New Question</div>
+    <div class="space-y-2">
+        <input id="qaAskTitle" type="text" placeholder="Question title (required)"
+            class="border rounded w-full text-sm p-2">
+        <textarea id="qaAskBody" rows="3" placeholder="Additional details (optional)"
+            class="border rounded w-full text-sm p-2 resize-none"></textarea>
+        <div class="flex gap-2 flex-wrap">
+            <div class="flex-1 min-w-[140px]">
+                <input id="qaAskBy" type="text" placeholder="Your name" class="border rounded text-sm p-1.5 w-full">
+                <p class="text-xs text-gray-400 mt-0.5">Optional. Leave blank to post as Mapping Technician.</p>
+            </div>
+            <input id="qaAskCategory" type="text" placeholder="Category (optional)"
+                class="border rounded text-sm p-1.5 flex-1 min-w-[140px]">
+            <input id="qaAskTags" type="text" placeholder="Tags, comma-separated"
+                class="border rounded text-sm p-1.5 flex-1 min-w-[140px]">
+        </div>
+        <div class="flex gap-2 pt-1">
+            <button id="qaAskSubmit" class="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700">
+                Submit Question
+            </button>
+            <button id="qaAskCancel" class="text-sm text-gray-400 hover:text-gray-600">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- SCENARIO CARDS SECTION (Reference Answers) -->
+<div id="scSection" class="mb-8">
+    <div class="flex items-center gap-2 mb-3">
+        <span class="qa-section-label">Reference Answers</span>
+        <span id="scAnsweredCount" class="text-xs text-gray-400"></span>
+    </div>
+    <div id="scResults" class="space-y-3"></div>
+</div>
+
+<!-- QUESTIONS SECTION -->
+<div id="qaSection">
+    <div class="flex items-center gap-2 mb-3">
+        <span class="qa-section-label">Questions</span>
+        <span id="qaCount" class="text-xs text-gray-400"></span>
+    </div>
+    <div id="qaResults" class="space-y-3">
+        <div class="text-sm text-gray-400">Loading…</div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/scenario_cards.js') }}?v=4"></script>
+<script src="{{ url_for('static', filename='js/qa_board.js') }}?v=1"></script>
 {% endblock %}
