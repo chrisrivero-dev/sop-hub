@@ -73,6 +73,15 @@
         font-weight: 600;
     }
 
+    .qa-badge-archived {
+        font-size: .7rem;
+        padding: .1rem .5rem;
+        border-radius: 9999px;
+        background: #f3f4f6;
+        color: #6b7280;
+        font-weight: 600;
+    }
+
     .qa-best-badge {
         font-size: .7rem;
         padding: .1rem .5rem;
@@ -112,6 +121,10 @@
         margin-top: .625rem;
         padding-top: .5rem;
         border-top: 1px solid #f3f4f6;
+        display: flex;
+        gap: .75rem;
+        flex-wrap: wrap;
+        align-items: center;
     }
 
     .qa-inline-form {
@@ -161,10 +174,11 @@
         <div id="scSuggestions" class="sc-suggestions hidden"></div>
     </div>
 
-    <div id="scFilters" class="flex gap-1 flex-shrink-0">
+    <div id="scFilters" class="flex gap-1 flex-shrink-0 flex-wrap">
         <button class="sc-filter-btn sc-filter-active" data-filter="all">All</button>
         <button class="sc-filter-btn" data-filter="open">Open</button>
         <button class="sc-filter-btn" data-filter="answered">Answered</button>
+        <button class="sc-filter-btn" data-filter="archived">Archived</button>
     </div>
 
     <button id="qaAskBtn"
@@ -226,5 +240,5 @@
     window.QA_EDITOR_MODE = {{ 'true' if qa_editor_mode else 'false' }};
 </script>
 <script src="{{ url_for('static', filename='js/scenario_cards.js') }}?v=4"></script>
-<script src="{{ url_for('static', filename='js/qa_board.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/qa_board.js') }}?v=2"></script>
 {% endblock %}

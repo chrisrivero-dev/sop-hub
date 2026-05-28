@@ -36,6 +36,9 @@ def list_questions(status=None, query=None):
     qs = Question.query
     if status and status != "all":
         qs = qs.filter_by(status=status)
+    else:
+        # "all" excludes archived — archived only visible via explicit filter
+        qs = qs.filter(Question.status != "archived")
     rows = qs.order_by(Question.asked_at.desc()).all()
 
     if query and query.strip():
@@ -100,3 +103,18 @@ def approve_answer(answer_id, approved_by=None):
     a.approved_at = datetime.utcnow()
     db.session.commit()
     return _answer_dict(a)
+
+
+def archive_question(question_id):
+    q = Question.query.get_or_404(question_id)
+    q.status = "archived"
+    db.session.commit()
+    return _question_dict(q)
+
+
+def delete_question(question_id):
+    q = Question.query.get_or_404(question_id)
+    qid = q.id
+    db.session.delete(q)  # cascade deletes answers via relationship
+    db.session.commit()
+    return {"deleted": True, "id": qid}

@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, current_app, abort
 from services.qa_service import (
     list_questions, create_question,
     add_answer, mark_best_answer, approve_answer,
+    archive_question, delete_question,
 )
 
 qa_bp = Blueprint("qa", __name__, url_prefix="/qa")
@@ -47,3 +48,15 @@ def approve(aid):
     _require_editor()
     data = request.get_json(force=True) or {}
     return jsonify({"ok": True, "answer": approve_answer(aid, data.get("approved_by"))})
+
+
+@qa_bp.post("/questions/<int:qid>/archive")
+def archive(qid):
+    _require_editor()
+    return jsonify({"ok": True, "question": archive_question(qid)})
+
+
+@qa_bp.post("/questions/<int:qid>/delete")
+def delete(qid):
+    _require_editor()
+    return jsonify({"ok": True, **delete_question(qid)})

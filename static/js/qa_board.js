@@ -1,5 +1,5 @@
 /* =====================================================
-   MAPPING Q&A BOARD — QUESTIONS & ANSWERS
+   MAPPING Q&A BOARD — QUESTIONS & ANSWERS  v2
    No AI. No LLM. No cloud. Local only.
    Editor actions gated by window.QA_EDITOR_MODE.
 ===================================================== */
@@ -9,7 +9,6 @@
 
   const qaResults = document.getElementById("qaResults");
   const qaCount = document.getElementById("qaCount");
-  const qaSection = document.getElementById("qaSection");
   const askBtn = document.getElementById("qaAskBtn");
   const askForm = document.getElementById("qaAskForm");
   const askCancel = document.getElementById("qaAskCancel");
@@ -37,7 +36,7 @@
     }
   }
 
-  // ---- FILTER (shares #scFilters with scenario_cards.js) ----
+  // ---- FILTER ----
   document.getElementById("scFilters")?.addEventListener("click", (e) => {
     const btn = e.target.closest(".sc-filter-btn");
     if (!btn) return;
@@ -53,14 +52,11 @@
     const approvedBadge = a.approved_by
       ? `<span class="qa-approved-badge">Approved by ${esc(a.approved_by)}</span>`
       : "";
-
-    // Mark Best only visible in editor mode, and only if not already best
     const markBestBtn =
       window.QA_EDITOR_MODE && !a.is_best_answer
-        ? `<button class="qa-mark-best text-xs text-gray-400 hover:text-green-700 whitespace-nowrap mt-1"
+        ? `<button class="qa-mark-best text-xs text-gray-400 hover:text-green-700 whitespace-nowrap"
                  data-aid="${a.id}">Mark Best</button>`
         : "";
-
     return `
       <div class="qa-answer ${a.is_best_answer ? "qa-answer-best" : ""}" data-aid="${a.id}">
         <div class="flex items-start gap-2">
@@ -77,10 +73,14 @@
 
   // ---- RENDER QUESTION ----
   function renderQuestion(q) {
+    const isArchived = q.status === "archived";
+
     const statusBadge =
       q.status === "open"
         ? `<span class="qa-badge-open">Open</span>`
-        : `<span class="qa-badge-answered">Answered</span>`;
+        : q.status === "answered"
+          ? `<span class="qa-badge-answered">Answered</span>`
+          : `<span class="qa-badge-archived">Archived</span>`;
 
     const tags = (q.tags || "")
       .split(",")
@@ -102,9 +102,10 @@
         ? q.answers.map(renderAnswer).join("")
         : `<div class="qa-no-answers">${noAnswerMsg}</div>`;
 
-    // Add Answer form and button only in editor mode
-    const answerFormHtml = window.QA_EDITOR_MODE
-      ? `
+    // Add Answer form — editor only, not shown on archived questions
+    const answerFormHtml =
+      window.QA_EDITOR_MODE && !isArchived
+        ? `
       <div id="qaAnswerForm-${q.id}" class="qa-inline-form" style="display:none;">
         <textarea class="qa-answer-body-input border rounded w-full text-sm p-2 resize-none"
                   rows="3" placeholder="Write your answer..."></textarea>
@@ -116,11 +117,24 @@
           <button class="qa-cancel-answer text-sm text-gray-400 hover:text-gray-600"
                   data-qid="${q.id}">Cancel</button>
         </div>
-      </div>
-      <div class="qa-actions">
+      </div>`
+        : "";
+
+    // Editor action bar
+    const editorActions = window.QA_EDITOR_MODE
+      ? `
+      ${
+        !isArchived
+          ? `
         <button class="qa-toggle-answer text-sm text-blue-600 hover:text-blue-800"
                 data-qid="${q.id}">+ Add Answer</button>
-      </div>`
+        <button class="qa-archive-btn text-xs text-gray-400 hover:text-yellow-700 border border-gray-200 rounded px-2 py-0.5"
+                data-qid="${q.id}">Archive</button>`
+          : ""
+      }
+      <button class="qa-delete-btn text-xs text-gray-400 hover:text-red-600 border border-gray-200 rounded px-2 py-0.5"
+              data-qid="${q.id}" data-title="${esc(q.title)}">Delete Test Question</button>
+    `
       : "";
 
     return `
@@ -137,26 +151,39 @@
         ${tagsHtml}
         <div class="qa-answers-list mt-3">${answersHtml}</div>
         ${answerFormHtml}
+        ${editorActions ? `<div class="qa-actions">${editorActions}</div>` : ""}
       </div>`;
   }
 
   // ---- RENDER BOARD ----
   function render(qs) {
-    let filtered = qs;
-    if (activeFilter === "open")
-      filtered = qs.filter((q) => q.status === "open");
-    if (activeFilter === "answered")
-      filtered = qs.filter((q) => q.status !== "open");
+    let filtered;
+    switch (activeFilter) {
+      case "open":
+        filtered = qs.filter((q) => q.status === "open");
+        break;
+      case "answered":
+        filtered = qs.filter((q) => q.status === "answered");
+        break;
+      case "archived":
+        filtered = qs.filter((q) => q.status === "archived");
+        break;
+      default:
+        filtered = qs.filter((q) => q.status !== "archived");
+        break; // "all"
+    }
 
     if (qaCount)
       qaCount.textContent = filtered.length ? `(${filtered.length})` : "";
 
     if (!filtered.length) {
-      const msg =
-        activeFilter === "open"
-          ? "No open questions yet. Click <strong>+ Ask a Question</strong> to submit one."
-          : "No questions match this filter.";
-      qaResults.innerHTML = `<div class="text-sm text-gray-400 py-2">${msg}</div>`;
+      const messages = {
+        open: "No open questions yet. Click <strong>+ Ask a Question</strong> to submit one.",
+        answered: "No answered questions yet.",
+        archived: "No archived questions.",
+        all: "No questions yet.",
+      };
+      qaResults.innerHTML = `<div class="text-sm text-gray-400 py-2">${messages[activeFilter] || messages.all}</div>`;
       return;
     }
 
@@ -164,8 +191,9 @@
     bindEvents();
   }
 
-  // ---- BIND EVENTS ----
+  // ---- BIND EVENTS (called after each render) ----
   function bindEvents() {
+    // Toggle answer form
     document.querySelectorAll(".qa-toggle-answer").forEach((btn) => {
       btn.addEventListener("click", () => {
         const form = document.getElementById(`qaAnswerForm-${btn.dataset.qid}`);
@@ -176,6 +204,7 @@
       });
     });
 
+    // Cancel answer form
     document.querySelectorAll(".qa-cancel-answer").forEach((btn) => {
       btn.addEventListener("click", () => {
         const form = document.getElementById(`qaAnswerForm-${btn.dataset.qid}`);
@@ -187,6 +216,7 @@
       });
     });
 
+    // Submit answer
     document.querySelectorAll(".qa-submit-answer").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const form = document.getElementById(`qaAnswerForm-${btn.dataset.qid}`);
@@ -196,7 +226,6 @@
           form.querySelector(".qa-answer-body-input").focus();
           return;
         }
-
         btn.disabled = true;
         btn.textContent = "Submitting…";
         try {
@@ -221,6 +250,7 @@
       });
     });
 
+    // Mark best
     document.querySelectorAll(".qa-mark-best").forEach((btn) => {
       btn.addEventListener("click", async () => {
         try {
@@ -234,6 +264,63 @@
         }
       });
     });
+
+    // Archive question
+    document.querySelectorAll(".qa-archive-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        btn.textContent = "Archiving…";
+        try {
+          const resp = await fetch(`/qa/questions/${btn.dataset.qid}/archive`, {
+            method: "POST",
+          });
+          const data = await resp.json();
+          if (data.ok) {
+            await load(currentQuery());
+          } else {
+            alert(data.error || "Archive failed.");
+            btn.disabled = false;
+            btn.textContent = "Archive";
+          }
+        } catch (err) {
+          console.error("ARCHIVE ERROR:", err);
+          btn.disabled = false;
+          btn.textContent = "Archive";
+        }
+      });
+    });
+
+    // Delete question
+    document.querySelectorAll(".qa-delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const title = btn.dataset.title || "this question";
+        if (
+          !confirm(
+            `Delete this question and all answers? This cannot be undone.\n\n"${title}"`,
+          )
+        )
+          return;
+        btn.disabled = true;
+        btn.textContent = "Deleting…";
+        try {
+          const resp = await fetch(`/qa/questions/${btn.dataset.qid}/delete`, {
+            method: "POST",
+          });
+          const data = await resp.json();
+          if (data.ok) {
+            await load(currentQuery());
+          } else {
+            alert(data.error || "Delete failed.");
+            btn.disabled = false;
+            btn.textContent = "Delete Test Question";
+          }
+        } catch (err) {
+          console.error("DELETE ERROR:", err);
+          btn.disabled = false;
+          btn.textContent = "Delete Test Question";
+        }
+      });
+    });
   }
 
   // ---- LOAD ----
@@ -243,7 +330,13 @@
       const resp = await fetch(url);
       const data = await resp.json();
       if (data.ok) {
-        questions = data.questions;
+        // fetch archived separately so local filter can switch without re-fetching
+        const archResp = await fetch("/qa/questions?status=archived");
+        const archData = await archResp.json();
+        questions = [
+          ...(data.questions || []),
+          ...(archData.ok ? archData.questions : []),
+        ];
         render(questions);
       }
     } catch (err) {
@@ -275,7 +368,6 @@
       titleEl?.focus();
       return;
     }
-
     askSubmit.disabled = true;
     askSubmit.textContent = "Submitting…";
     try {
@@ -316,7 +408,7 @@
     askSubmit.textContent = "Submit Question";
   });
 
-  // ---- SEARCH (shares #scSearch with scenario_cards.js) ----
+  // ---- SEARCH INTEGRATION ----
   document.getElementById("scSearch")?.addEventListener("input", () => {
     clearTimeout(window._qaBoardTimer);
     window._qaBoardTimer = setTimeout(() => load(currentQuery()), 300);
