@@ -123,12 +123,13 @@ app = Flask(
     static_folder=static_dir,
     template_folder=template_dir
 )
-app.register_blueprint(file_summary_bp)
 from routes.file_guidance_routes import file_guidance_bp
 from routes.scenario_card_routes import scenario_card_bp
+app.register_blueprint(file_summary_bp)
 app.register_blueprint(file_guidance_bp)
 app.register_blueprint(scenario_card_bp)
-app.register_blueprint(topic_summary_bp)
+from routes.qa_routes import qa_bp
+app.register_blueprint(qa_bp)
 
 # ======================================================
 # PREVIEW SYSTEM (THUMBNAIL-BASED)
@@ -217,12 +218,17 @@ os.makedirs(INSTANCE_DIR, exist_ok=True)
 
 DB_PATH = os.path.join(INSTANCE_DIR, "sop.db")
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+import os as _os
+app.config["QA_EDITOR_MODE"] = _os.environ.get("QA_EDITOR_MODE", "").lower() in ("1", "true", "yes")
 
 db.init_app(app)
 migrate.init_app(app, db)
 from models.file_guidance import FileGuidance      # noqa: F401 — Flask-Migrate discovery
 from models.scenario_card import ScenarioCard      # noqa: F401 — Flask-Migrate discovery
-
+from models.qa_question import Question            # noqa: F401 — Flask-Migrate discovery
+from models.qa_answer import Answer                # noqa: F401 — Flask-Migrate discovery
+from models.qa_question import Question            # noqa: F401 — Flask-Migrate discovery
+from models.qa_answer import Answer                # noqa: F401 — Flask-Migrate discovery
 
 
 # ======================================================

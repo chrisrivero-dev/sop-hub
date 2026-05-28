@@ -11,8 +11,7 @@
   const resultsEl = document.getElementById("scResults");
   const suggestionsEl = document.getElementById("scSuggestions");
   const countEl = document.getElementById("scAnsweredCount");
-  const answeredSec = document.getElementById("scAnsweredSection");
-  const openSec = document.getElementById("scOpenSection");
+  const scSection = document.getElementById("scSection");
 
   if (!searchInput || !resultsEl) return;
 
@@ -59,16 +58,9 @@
   });
 
   function applyFilter() {
-    if (activeFilter === "all") {
-      answeredSec.style.display = "";
-      openSec.style.display = "";
-    } else if (activeFilter === "answered") {
-      answeredSec.style.display = "";
-      openSec.style.display = "none";
-    } else if (activeFilter === "open") {
-      answeredSec.style.display = "none";
-      openSec.style.display = "";
-    }
+    if (!scSection) return;
+    // scenario cards are "answered" knowledge — hide only when Open filter is active
+    scSection.style.display = activeFilter === "open" ? "none" : "";
   }
 
   // ---- RENDER HELPERS ----

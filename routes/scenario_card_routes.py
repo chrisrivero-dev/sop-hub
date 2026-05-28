@@ -6,8 +6,11 @@ scenario_card_bp = Blueprint("scenario_cards", __name__)
 
 @scenario_card_bp.get("/ask-mapping-question")
 def ask_mapping_question():
-    return render_template("ask_mapping_question.html")
-
+    from flask import current_app
+    return render_template(
+        "ask_mapping_question.html",
+        qa_editor_mode=current_app.config.get("QA_EDITOR_MODE", False),
+    )
 
 @scenario_card_bp.get("/scenario-cards/search")
 def search_scenario_cards():

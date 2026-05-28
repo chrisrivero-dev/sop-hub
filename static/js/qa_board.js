@@ -1,7 +1,7 @@
 /* =====================================================
    MAPPING Q&A BOARD — QUESTIONS & ANSWERS
-   Owns: real Q&A (not Scenario Cards).
    No AI. No LLM. No cloud. Local only.
+   Editor actions gated by window.QA_EDITOR_MODE.
 ===================================================== */
 
 (function () {
@@ -20,7 +20,6 @@
   let questions = [];
   let activeFilter = "all";
 
-  // ---- ESCAPE ----
   function esc(v) {
     return String(v ?? "")
       .replace(/&/g, "&amp;")
@@ -38,15 +37,12 @@
     }
   }
 
-  // ---- FILTER SYNC with scenario_cards.js ----
+  // ---- FILTER (shares #scFilters with scenario_cards.js) ----
   document.getElementById("scFilters")?.addEventListener("click", (e) => {
     const btn = e.target.closest(".sc-filter-btn");
     if (!btn) return;
     activeFilter = btn.dataset.filter;
     render(questions);
-    if (qaSection) {
-      qaSection.style.display = activeFilter === "answered" ? "" : "";
-    }
   });
 
   // ---- RENDER ANSWER ----
@@ -57,17 +53,21 @@
     const approvedBadge = a.approved_by
       ? `<span class="qa-approved-badge">Approved by ${esc(a.approved_by)}</span>`
       : "";
-    const markBestBtn = !a.is_best_answer
-      ? `<button class="qa-mark-best text-xs text-gray-400 hover:text-green-700 whitespace-nowrap mt-1"
+
+    // Mark Best only visible in editor mode, and only if not already best
+    const markBestBtn =
+      window.QA_EDITOR_MODE && !a.is_best_answer
+        ? `<button class="qa-mark-best text-xs text-gray-400 hover:text-green-700 whitespace-nowrap mt-1"
                  data-aid="${a.id}">Mark Best</button>`
-      : "";
+        : "";
+
     return `
       <div class="qa-answer ${a.is_best_answer ? "qa-answer-best" : ""}" data-aid="${a.id}">
         <div class="flex items-start gap-2">
           <div class="flex-1">
             <div class="qa-answer-body">${esc(a.body)}</div>
             <div class="qa-meta">
-            ${esc(a.answered_by || "Mapping Technician")} · ${fmtDate(a.answered_at)}${bestBadge}${approvedBadge}
+              ${esc(a.answered_by || "Mapping Technician")} · ${fmtDate(a.answered_at)}${bestBadge}${approvedBadge}
             </div>
           </div>
           <div class="flex-shrink-0">${markBestBtn}</div>
@@ -89,15 +89,39 @@
       .map((t) => `<span class="sc-tag">${esc(t)}</span>`)
       .join("");
     const tagsHtml = tags ? `<div class="sc-tags mt-1">${tags}</div>` : "";
-
     const catHtml = q.category
       ? `<span class="qa-category">${esc(q.category)}</span>`
       : "";
 
+    const noAnswerMsg = window.QA_EDITOR_MODE
+      ? "No answers yet."
+      : "Awaiting senior/supervisor answer.";
+
     const answersHtml =
       q.answers && q.answers.length
         ? q.answers.map(renderAnswer).join("")
-        : `<div class="qa-no-answers">No answers yet. Be the first to answer.</div>`;
+        : `<div class="qa-no-answers">${noAnswerMsg}</div>`;
+
+    // Add Answer form and button only in editor mode
+    const answerFormHtml = window.QA_EDITOR_MODE
+      ? `
+      <div id="qaAnswerForm-${q.id}" class="qa-inline-form" style="display:none;">
+        <textarea class="qa-answer-body-input border rounded w-full text-sm p-2 resize-none"
+                  rows="3" placeholder="Write your answer..."></textarea>
+        <div class="flex gap-2 mt-2 items-center flex-wrap">
+          <input type="text" class="qa-answer-by-input border rounded text-sm p-1.5 w-40"
+                 placeholder="Your name (optional)">
+          <button class="qa-submit-answer bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700"
+                  data-qid="${q.id}">Submit Answer</button>
+          <button class="qa-cancel-answer text-sm text-gray-400 hover:text-gray-600"
+                  data-qid="${q.id}">Cancel</button>
+        </div>
+      </div>
+      <div class="qa-actions">
+        <button class="qa-toggle-answer text-sm text-blue-600 hover:text-blue-800"
+                data-qid="${q.id}">+ Add Answer</button>
+      </div>`
+      : "";
 
     return `
       <div class="qa-question-card" data-qid="${q.id}">
@@ -107,30 +131,12 @@
         </div>
         ${q.body ? `<div class="qa-question-body">${esc(q.body)}</div>` : ""}
         <div class="qa-meta">
-        Asked by ${esc(q.asked_by || "Mapping Technician")} · ${fmtDate(q.asked_at)}
+          Asked by ${esc(q.asked_by || "Mapping Technician")} · ${fmtDate(q.asked_at)}
           · ${q.answer_count} answer${q.answer_count !== 1 ? "s" : ""}
         </div>
         ${tagsHtml}
-
         <div class="qa-answers-list mt-3">${answersHtml}</div>
-
-        <div id="qaAnswerForm-${q.id}" class="qa-inline-form" style="display:none;">
-          <textarea class="qa-answer-body-input border rounded w-full text-sm p-2 resize-none"
-                    rows="3" placeholder="Write your answer..."></textarea>
-          <div class="flex gap-2 mt-2 items-center flex-wrap">
-            <input type="text" class="qa-answer-by-input border rounded text-sm p-1.5 w-40"
-                   placeholder="Your name (optional)">
-            <button class="qa-submit-answer bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700"
-                    data-qid="${q.id}">Submit Answer</button>
-            <button class="qa-cancel-answer text-sm text-gray-400 hover:text-gray-600"
-                    data-qid="${q.id}">Cancel</button>
-          </div>
-        </div>
-
-        <div class="qa-actions">
-          <button class="qa-toggle-answer text-sm text-blue-600 hover:text-blue-800"
-                  data-qid="${q.id}">+ Add Answer</button>
-        </div>
+        ${answerFormHtml}
       </div>`;
   }
 
@@ -148,7 +154,7 @@
     if (!filtered.length) {
       const msg =
         activeFilter === "open"
-          ? "No open questions yet. Click <strong>+ Ask a Question</strong> to start."
+          ? "No open questions yet. Click <strong>+ Ask a Question</strong> to submit one."
           : "No questions match this filter.";
       qaResults.innerHTML = `<div class="text-sm text-gray-400 py-2">${msg}</div>`;
       return;
@@ -158,9 +164,8 @@
     bindEvents();
   }
 
-  // ---- BIND EVENTS (called after each render) ----
+  // ---- BIND EVENTS ----
   function bindEvents() {
-    // Toggle answer form
     document.querySelectorAll(".qa-toggle-answer").forEach((btn) => {
       btn.addEventListener("click", () => {
         const form = document.getElementById(`qaAnswerForm-${btn.dataset.qid}`);
@@ -171,7 +176,6 @@
       });
     });
 
-    // Cancel answer
     document.querySelectorAll(".qa-cancel-answer").forEach((btn) => {
       btn.addEventListener("click", () => {
         const form = document.getElementById(`qaAnswerForm-${btn.dataset.qid}`);
@@ -183,7 +187,6 @@
       });
     });
 
-    // Submit answer
     document.querySelectorAll(".qa-submit-answer").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const form = document.getElementById(`qaAnswerForm-${btn.dataset.qid}`);
@@ -218,7 +221,6 @@
       });
     });
 
-    // Mark best
     document.querySelectorAll(".qa-mark-best").forEach((btn) => {
       btn.addEventListener("click", async () => {
         try {
@@ -314,11 +316,10 @@
     askSubmit.textContent = "Submit Question";
   });
 
-  // ---- SEARCH INTEGRATION (shares #scSearch with scenario_cards.js) ----
+  // ---- SEARCH (shares #scSearch with scenario_cards.js) ----
   document.getElementById("scSearch")?.addEventListener("input", () => {
-    const q = document.getElementById("scSearch").value.trim();
     clearTimeout(window._qaBoardTimer);
-    window._qaBoardTimer = setTimeout(() => load(q), 300);
+    window._qaBoardTimer = setTimeout(() => load(currentQuery()), 300);
   });
 
   // ---- INIT ----
