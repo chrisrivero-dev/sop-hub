@@ -90,16 +90,61 @@
   });
 
   // ── TAG PILLS ─────────────────────────────────────────
+  const TAG_PRIORITY = [
+    "legal", "tract", "LLA", "taxes", "ownership", "ATS", "MicroStation",
+    "engineer-file", "ROW", "condo", "parcel-map", "FOC", "transfer",
+    "remarks", "roll-year", "dedication", "APN", "title-review",
+    "senior-review", "mapping-standards",
+  ];
+  const TAG_VISIBLE_LIMIT = 20;
+  let tagsExpanded = false;
+
+  function sortedTags(tags) {
+    const priorityLower = TAG_PRIORITY.map(t => t.toLowerCase());
+    const prioritized = [];
+    const rest = [];
+    tags.forEach(t => {
+      const idx = priorityLower.indexOf(t.toLowerCase());
+      if (idx !== -1) prioritized[idx] = t;
+      else rest.push(t);
+    });
+    return [...prioritized.filter(Boolean), ...rest.sort((a, b) => a.localeCompare(b))];
+  }
+
   function renderTagPills() {
     if (!tagPillsEl) return;
     if (!allTags.length) { tagPillsEl.innerHTML = ""; return; }
-    const pills = allTags.map(t =>
-      `<button class="sc-tag-pill${activeTag === t ? " sc-tag-active" : ""}"
-               data-tag="${esc(t)}">${esc(t)}</button>`
-    ).join("");
-    tagPillsEl.innerHTML =
-      `<button class="sc-tag-pill${!activeTag ? " sc-tag-active" : ""}" data-tag="">All</button>` +
-      pills;
+
+    const sorted   = sortedTags(allTags);
+    const visible  = sorted.slice(0, TAG_VISIBLE_LIMIT);
+    const hidden   = sorted.slice(TAG_VISIBLE_LIMIT);
+
+    // If active tag is in the hidden set, force it into visible while selected
+    const activeInHidden = activeTag && hidden.includes(activeTag);
+
+    function pill(t) {
+      return `<button class="sc-tag-pill${activeTag === t ? " sc-tag-active" : ""}"
+                       data-tag="${esc(t)}">${esc(t)}</button>`;
+    }
+
+    let html = `<button class="sc-tag-pill${!activeTag ? " sc-tag-active" : ""}" data-tag="">All</button>`;
+    html += visible.map(pill).join("");
+
+    if (activeInHidden) {
+      html += pill(activeTag);
+    }
+
+    if (hidden.length) {
+      if (tagsExpanded) {
+        const toShow = hidden.filter(t => t !== activeTag || !activeInHidden);
+        html += toShow.map(pill).join("");
+        html += `<button class="sc-tag-pill sc-tag-more" data-action="toggle-tags">Hide Tags</button>`;
+      } else {
+        html += `<button class="sc-tag-pill sc-tag-more" data-action="toggle-tags">More Tags (${hidden.length})</button>`;
+      }
+    }
+
+    tagPillsEl.innerHTML = html;
   }
 
   async function loadTagPills() {
@@ -117,9 +162,15 @@
 
   if (tagPillsEl) {
     tagPillsEl.addEventListener("click", (e) => {
-      const pill = e.target.closest(".sc-tag-pill");
-      if (!pill) return;
-      activeTag = pill.dataset.tag || null;
+      const pill = e.target.closest("[data-action='toggle-tags']");
+      if (pill) {
+        tagsExpanded = !tagsExpanded;
+        renderTagPills();
+        return;
+      }
+      const tagPill = e.target.closest(".sc-tag-pill");
+      if (!tagPill) return;
+      activeTag = tagPill.dataset.tag || null;
       renderTagPills();
       search(searchInput.value.trim(), activeTag);
     });
