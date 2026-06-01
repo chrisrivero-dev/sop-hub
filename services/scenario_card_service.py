@@ -20,7 +20,6 @@ def _to_dict(card):
 
 
 def search_approved(query):
-    """Return approved cards matching all query terms across key fields."""
     from models.scenario_card import ScenarioCard
 
     base = ScenarioCard.query.filter_by(status="approved")
@@ -47,8 +46,35 @@ def search_approved(query):
     return [_to_dict(c) for c in results]
 
 
+def get_all_cards(status=None, query=None):
+    from models.scenario_card import ScenarioCard
+
+    qs = ScenarioCard.query
+    if status and status != "all":
+        qs = qs.filter_by(status=status)
+    rows = qs.order_by(ScenarioCard.updated_at.desc()).all()
+
+    if query and query.strip():
+        terms = query.strip().lower().split()
+        rows = [
+            c for c in rows
+            if all(
+                t in " ".join([
+                    c.title or "",
+                    c.plain_english_answer or "",
+                    c.what_to_do or "",
+                    c.trigger_phrases or "",
+                    c.tags or "",
+                    c.source_reference or "",
+                ]).lower()
+                for t in terms
+            )
+        ]
+
+    return [_to_dict(c) for c in rows]
+
+
 def create_card(data):
-    """Insert a new ScenarioCard. Returns the saved dict."""
     from extensions import db
     from models.scenario_card import ScenarioCard
 
@@ -69,3 +95,63 @@ def create_card(data):
     db.session.add(card)
     db.session.commit()
     return _to_dict(card)
+
+
+_EDITABLE_FIELDS = [
+    "title", "plain_english_answer", "what_to_do", "best_references",
+    "escalate_when", "trigger_phrases", "tags", "source_reference",
+    "source_date", "status", "approved_by",
+]
+
+
+def update_card(card_id, data):
+    from extensions import db
+    from models.scenario_card import ScenarioCard
+
+    card = ScenarioCard.query.get_or_404(card_id)
+    for field in _EDITABLE_FIELDS:
+        if field not in data:
+            continue
+        val = (data[field] or "").strip() or None
+        if field == "title":
+            val = (data[field] or "").strip()
+            if not val:
+                continue
+        setattr(card, field, val)
+    card.updated_at = datetime.utcnow()
+    db.session.commit()
+    return _to_dict(card)
+
+
+def approve_card(card_id, approved_by=None):
+    from extensions import db
+    from models.scenario_card import ScenarioCard
+
+    card = ScenarioCard.query.get_or_404(card_id)
+    card.status = "approved"
+    card.approved_by = (approved_by or "").strip() or None
+    card.updated_at = datetime.utcnow()
+    db.session.commit()
+    return _to_dict(card)
+
+
+def mark_needs_review_card(card_id):
+    from extensions import db
+    from models.scenario_card import ScenarioCard
+
+    card = ScenarioCard.query.get_or_404(card_id)
+    card.status = "needs_review"
+    card.updated_at = datetime.utcnow()
+    db.session.commit()
+    return _to_dict(card)
+
+
+def delete_card(card_id):
+    from extensions import db
+    from models.scenario_card import ScenarioCard
+
+    card = ScenarioCard.query.get_or_404(card_id)
+    cid = card.id
+    db.session.delete(card)
+    db.session.commit()
+    return {"deleted": True, "id": cid}

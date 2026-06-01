@@ -22,9 +22,13 @@
 
     <nav class="space-y-2">
       <a href="/" class="block text-blue-700 font-medium hover:underline">🏠 Home</a>
-            <a href="/reference" class="block text-blue-700 hover:underline">📚 Reference Library</a>
-            <a href="/search-hub" class="block text-blue-700 hover:underline">🔍 Search Hub</a>
-            <a href="/ask-mapping-question" class="block text-blue-700 hover:underline">❓ Ask a Mapping Question</a>
+      <a href="/reference" class="block text-blue-700 hover:underline">📚 Reference Library</a>
+      <a href="/search-hub" class="block text-blue-700 hover:underline">🔍 Search Hub</a>
+      <a href="/ask-mapping-question" class="block text-blue-700 hover:underline">❓ Ask a Mapping Question</a>
+      {% if qa_editor_mode %}
+      <a href="/scenario-cards/admin" class="block text-blue-700 hover:underline">🗂 Scenario Card Admin</a>
+      {% endif %}
+    </nav>
   </aside>
 
   <main class="flex-1 p-6">
