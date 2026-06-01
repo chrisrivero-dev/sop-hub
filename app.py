@@ -204,20 +204,24 @@ static_dir   = os.path.join(BASE_DIR, "static")
 
 
 # ======================================================
-# DATABASE LOCATION — LOCALAPPDATA IN EXE MODE
+# DATABASE LOCATION
 # ======================================================
+from pathlib import Path
+
 if getattr(sys, "frozen", False):
-    # When running from EXE, store DB safely here:
-    root = os.path.join(os.environ["LOCALAPPDATA"], "OC_SOP_Hub")
+    # EXE mode: DB lives next to the .exe in instance/sop.db
+    root = Path(sys.executable).parent
 else:
-    # Dev mode stores DB next to app.py
-    root = os.path.dirname(__file__)
+    # Dev mode: DB lives next to app.py in instance/sop.db
+    root = Path(__file__).parent
 
-INSTANCE_DIR = os.path.join(root, "instance")
-os.makedirs(INSTANCE_DIR, exist_ok=True)
+INSTANCE_DIR = root / "instance"
+INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
 
-DB_PATH = os.path.join(INSTANCE_DIR, "sop.db")
+DB_PATH = INSTANCE_DIR / "sop.db"
+print(f"🔥 SOP DB PATH: {DB_PATH}")
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+
 
 db.init_app(app)
 migrate.init_app(app, db)
