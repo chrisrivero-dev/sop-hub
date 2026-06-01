@@ -11,75 +11,89 @@
 </style>
 
 <div class="container mx-auto mt-4 px-4">
+    <div class="flex items-center gap-3 mb-3 flex-wrap">
+        <h1 class="text-2xl font-bold mr-2">Search Hub</h1>
 
-    <!-- TOOLBAR -->
-    <div class="flex items-center gap-3 mb-4 flex-wrap">
-        <h1 class="text-xl font-bold">Search Hub</h1>
-
-        <button id="reindexBtn"
-            class="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700 whitespace-nowrap">
+        <button id="reindexBtn" class="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700 whitespace-nowrap">
             Rebuild Index
         </button>
-        <span id="reindexStatus" class="text-sm font-semibold text-gray-600"></span>
+        <span id="reindexStatus" class="text-sm font-semibold text-gray-700"></span>
 
         <div class="flex items-center gap-1.5 ml-auto">
             <input type="checkbox" id="autoOpenToggle" class="form-checkbox">
-            <label for="autoOpenToggle" class="text-sm text-gray-500 whitespace-nowrap">Auto-open on pin</label>
+            <label for="autoOpenToggle" class="text-sm text-gray-600 whitespace-nowrap">Auto-open on pin</label>
         </div>
     </div>
 
     {% if first_time %}
-    <div class="bg-yellow-100 text-yellow-800 p-3 rounded mb-4 border text-sm">
+    <div class="bg-yellow-100 text-yellow-800 p-3 rounded mb-3 border text-sm">
         <strong>Your file index is empty.</strong> Click <strong>Rebuild Index</strong> to enable fast search.
     </div>
     {% endif %}
 
     <!-- SEARCH BAR -->
-    <div class="flex gap-2 mb-5">
+    <div class="flex gap-3 mb-4">
         <input id="searchInput" type="text" placeholder="Search by document type, keyword, or scenario..."
-            class="border p-2.5 flex-grow rounded text-sm w-full">
-        <button id="searchBtn"
-            class="bg-blue-600 text-white px-5 py-2 rounded text-sm whitespace-nowrap hover:bg-blue-700">
+            class="border p-3 flex-grow rounded w-full">
+        <button id="searchBtn" class="bg-blue-600 text-white px-5 py-2 rounded whitespace-nowrap">
             Search
         </button>
     </div>
 
-    <!-- RESULTS + PREVIEW -->
-    <div class="flex flex-col lg:flex-row gap-5 items-start">
+    <!-- RESULTS + PREVIEW (2-col, stacks on small screens) -->
+    <div class="flex flex-col lg:flex-row gap-4 items-start">
 
-        <div id="resultsContainer" class="flex-1 min-w-0 space-y-3"></div>
+        <div id="resultsContainer" class="flex-1 min-w-0 space-y-4"></div>
 
         <div id="referencePreview"
-            class="w-full lg:w-[360px] flex-shrink-0 p-4 border rounded bg-white shadow-sm min-h-[200px]">
-            <div class="text-xs text-gray-400 uppercase tracking-wide mb-2">Document Preview</div>
+             class="w-full lg:w-[380px] flex-shrink-0 p-4 border rounded bg-white shadow-sm min-h-[220px]">
+            <div class="text-sm text-gray-500 mb-2">DOCUMENT PREVIEW</div>
             <div class="text-gray-400 text-sm">Select a file to preview.</div>
         </div>
 
     </div>
 </div>
 
+<!-- ========================= -->
+<!-- SEARCH HUB INIT -->
+<!-- ========================= -->
 <script>
     document.addEventListener("DOMContentLoaded", () => {
 
+        // =========================
+        // AUTO OPEN TOGGLE
+        // =========================
         const toggle = document.getElementById("autoOpenToggle");
-        if (localStorage.getItem("autoOpen") === "1") toggle.checked = true;
+        const saved = localStorage.getItem("autoOpen");
+
+        if (saved === "1") toggle.checked = true;
+
         toggle.addEventListener("change", () => {
             localStorage.setItem("autoOpen", toggle.checked ? "1" : "0");
         });
 
+        // =========================
+        // CLEAR INPUT ON LOAD
+        // =========================
         const input = document.getElementById("searchInput");
         if (input) input.value = "";
 
+        // =========================
+        // REINDEX BUTTON (SAFE BIND)
+        // =========================
         const reindexBtn = document.getElementById("reindexBtn");
+
         if (reindexBtn) {
             reindexBtn.addEventListener("click", async () => {
                 const status = document.getElementById("reindexStatus");
-                status.textContent = "Rebuilding… please wait.";
+                status.textContent = "Rebuilding index... Please wait.";
+
                 try {
                     const resp = await fetch("/reindex", { method: "POST" });
                     const data = await resp.json();
+
                     if (data.success) {
-                        status.textContent = "Done! Refreshing…";
+                        status.textContent = "Index rebuilt successfully! Refreshing...";
                         setTimeout(() => window.location.reload(), 1200);
                     } else {
                         status.textContent = "Error rebuilding index.";
@@ -94,6 +108,9 @@
     });
 </script>
 
+<!-- ========================= -->
+<!-- SEARCH ENGINE (LOAD ONCE ONLY) -->
+<!-- ========================= -->
 <script src="/static/js/reference_preview.js?v=2"></script>
 <script src="/static/js/search_assistant.js?v=7"></script>
 

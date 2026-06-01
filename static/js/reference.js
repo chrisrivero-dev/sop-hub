@@ -1,7 +1,7 @@
 /* =====================================================
    REFERENCE LIBRARY — BEHAVIOR
-   Owns: group collapse, unpin, open-folder,
-         row-click preview trigger, import/export
+   Owns: group collapse, pin/unpin, copy-workspace,
+         open-file, open-folder, row-click preview trigger
    Preview functions live in reference_preview.js
 ===================================================== */
 
@@ -9,11 +9,25 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("REFERENCE_JS_LOADED_V20013");
 
   // =========================
+  // HTML ESCAPE HELPER
+  // =========================
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // =========================
   // GROUP COLLAPSE / EXPAND
   // =========================
   document.querySelectorAll(".group-header").forEach((header) => {
     header.addEventListener("click", (e) => {
-      if (e.target.closest("button")) return;
+      if (e.target.closest("button")) {
+        return;
+      }
 
       const groupName = header.dataset.group;
       const groupBody = document.querySelector(
@@ -21,13 +35,24 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       const arrow = header.querySelector(".group-arrow");
 
-      if (!groupBody) return;
+      if (!groupBody) {
+        return;
+      }
 
       const isHidden = groupBody.classList.contains("hidden");
-      groupBody.classList.toggle("hidden");
 
-      if (arrow) {
-        arrow.textContent = isHidden ? "▼" : "▶";
+      if (isHidden) {
+        groupBody.classList.remove("hidden");
+
+        if (arrow) {
+          arrow.textContent = "▼";
+        }
+      } else {
+        groupBody.classList.add("hidden");
+
+        if (arrow) {
+          arrow.textContent = "▶";
+        }
       }
     });
   });
@@ -36,8 +61,35 @@ document.addEventListener("DOMContentLoaded", () => {
   // GLOBAL CLICK HANDLER
   // =========================
   document.addEventListener("click", async (e) => {
-    // UNPIN
+
+    // =========================
+    // DISPLAY NAME → OPEN FILE (single click)
+    // =========================
+    const nameSpan = e.target.closest(".ref-display-name");
+    if (nameSpan) {
+      const path = nameSpan.dataset.path;
+      if (path) {
+        try { await fetch(`/open-file?path=${encodeURIComponent(path)}`); }
+        catch (err) { console.error("NAME OPEN ERROR:", err); }
+      }
+      return; // Don't fall through to row-click preview
+    }
+
+    // =========================
+    // PREVIEW BUTTON (🔍)
+    // =========================
+    const previewBtn = e.target.closest(".preview-ref-btn");
+    if (previewBtn) {
+      const path = previewBtn.dataset.path;
+      if (path) window.loadReferencePreview?.(path);
+      return;
+    }
+
+    // =========================
+    // UNPIN (far-right button with confirmation)
+    // =========================
     const unpinBtn = e.target.closest(".unpin-btn");
+
     if (unpinBtn) {
       const name = unpinBtn.dataset.name || "this file";
       if (!confirm(`Remove "${name}" from Reference Library?`)) return;
@@ -51,20 +103,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const resp = await fetch("/toggle-pin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            file_name: fileName,
-            file_path: filePath,
-            folder: "",
-          }),
+          body: JSON.stringify({ file_name: fileName, file_path: filePath, folder: "" }),
         });
-
         const data = await resp.json();
 
         if (data.success) {
           const row = unpinBtn.closest(".ref-row");
           if (row) row.remove();
         } else {
-          console.error("UNPIN FAILED:", data);
+          console.error("unpin failed:", data);
         }
       } catch (err) {
         console.error("UNPIN ERROR:", err);
@@ -73,10 +120,88 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // =========================
+    // COPY TO WORKSPACE
+    // =========================
+    const copyBtn = e.target.closest(".copy-workspace");
+
+    if (copyBtn) {
+      if (copyBtn.dataset.busy === "true") {
+        return;
+      }
+
+      copyBtn.dataset.busy = "true";
+      copyBtn.disabled = true;
+
+      const filePath = copyBtn.dataset.path;
+      const groupName = copyBtn.dataset.group || "Ungrouped";
+
+      if (!filePath) {
+        console.error("COPY ERROR: missing file path");
+        copyBtn.dataset.busy = "false";
+        copyBtn.disabled = false;
+        return;
+      }
+
+      const originalText = copyBtn.textContent;
+
+      try {
+        copyBtn.textContent = "⏳";
+
+        const resp = await fetch("/copy-to-workspace", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            file_path: filePath,
+            group: groupName,
+          }),
+        });
+
+        const data = await resp.json();
+
+        console.log("COPY TO WORKSPACE RESPONSE:", data);
+
+        if (!data.success) {
+          copyBtn.textContent = "⚠";
+          copyBtn.title = data.message || "Copy failed";
+          copyBtn.dataset.busy = "false";
+          copyBtn.disabled = false;
+          return;
+        }
+
+        if (data.copied) {
+          copyBtn.textContent = "✅";
+          copyBtn.title = "Copied to workspace";
+        } else {
+          copyBtn.textContent = "✔";
+          copyBtn.title = "Already exists in workspace";
+        }
+
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+          copyBtn.dataset.busy = "false";
+          copyBtn.disabled = false;
+        }, 2000);
+      } catch (err) {
+        console.error("COPY TO WORKSPACE ERROR:", err);
+        copyBtn.textContent = "⚠";
+        copyBtn.dataset.busy = "false";
+        copyBtn.disabled = false;
+      }
+
+      return;
+    }
+
+    // =========================
     // OPEN ORIGINAL FROM PREVIEW PANEL
+    // =========================
     const previewOpenBtn = e.target.closest(".open-original-from-preview");
+
     if (previewOpenBtn) {
       const path = previewOpenBtn.dataset.path;
+
       if (!path) return;
 
       try {
@@ -88,10 +213,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // =========================
     // OPEN FOLDER
+    // =========================
     const folderBtn = e.target.closest(".open-folder");
+
     if (folderBtn) {
       const path = folderBtn.dataset.path;
+
       if (!path) return;
 
       try {
@@ -103,50 +232,67 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // DETAILS TOGGLE
-    const detailsBtn = e.target.closest(".details-toggle");
-    if (detailsBtn) {
-      const rowEl = detailsBtn.closest(".ref-row");
-      const detail = rowEl?.querySelector(".ref-row-detail");
+    // =========================
+    // OPEN FILE + PREVIEW
+    // =========================
+    const openBtn = e.target.closest(".open-file");
 
-      if (detail) {
-        const opening = detail.classList.contains("hidden");
-        detail.classList.toggle("hidden");
-        detailsBtn.textContent = opening ? "Details ⌃" : "Details ⌄";
+    if (openBtn) {
+      const path = openBtn.dataset.path;
+
+      if (!path) return;
+
+      try {
+        await fetch(`/open-file?path=${encodeURIComponent(path)}`);
+        window.loadReferencePreview?.(path);
+      } catch (err) {
+        console.error("OPEN ERROR:", err);
       }
 
       return;
     }
 
-    // ROW CLICK → PREVIEW
-    const row = e.target.closest(".ref-row");
-    if (row) {
-      const path = row.querySelector(".ref-display-name")?.dataset.path;
+    // =========================
+    // DETAILS TOGGLE
+    // =========================
+    const detailsBtn = e.target.closest(".details-toggle");
 
-      if (path) {
-        window.loadReferencePreview?.(path);
+    if (detailsBtn) {
+      const rowEl = detailsBtn.closest(".ref-row");
+      const detail = rowEl?.querySelector(".ref-row-detail");
+      if (detail) {
+        const opening = detail.classList.contains("hidden");
+        detail.classList.toggle("hidden");
+        detailsBtn.textContent = opening ? "Details ⌃" : "Details ⌄";
       }
+      return;
     }
 
+    // =========================
+    // ROW CLICK → PREVIEW (non-button, non-name areas)
+    // =========================
+    const row = e.target.closest(".ref-row");
+
+    if (row) {
+      const path = row.querySelector(".ref-display-name")?.dataset.path;
+      if (path) window.loadReferencePreview?.(path);
+    }
+
+    // =========================
     // DELETE GROUP
+    // =========================
     const deleteGroupBtn = e.target.closest(".delete-group");
+
     if (deleteGroupBtn) {
       const groupName = deleteGroupBtn.dataset.groupName;
       if (!groupName) return;
 
-      if (
-        !confirm(`Delete group "${groupName}"? Items will move to Ungrouped.`)
-      )
-        return;
+      if (!confirm(`Delete group "${groupName}"? Items will move to Ungrouped.`)) return;
 
       try {
-        const resp = await fetch(
-          `/delete-group/${encodeURIComponent(groupName)}`,
-          {
-            method: "POST",
-          },
-        );
-
+        const resp = await fetch(`/delete-group/${encodeURIComponent(groupName)}`, {
+          method: "POST",
+        });
         const data = await resp.json();
 
         if (!data.success) {
@@ -169,7 +315,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (refSearch) {
     refSearch.addEventListener("input", () => {
       const query = refSearch.value.toLowerCase();
-
       document.querySelectorAll(".ref-row").forEach((row) => {
         const name = (row.dataset.name || "").toLowerCase();
         const file = (row.dataset.file || "").toLowerCase();
@@ -194,7 +339,6 @@ document.addEventListener("DOMContentLoaded", () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: name.trim() }),
         });
-
         const data = await resp.json();
 
         if (!data.success) {
@@ -219,11 +363,9 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const resp = await fetch("/export-settings");
         const data = await resp.json();
-
         const blob = new Blob([JSON.stringify(data, null, 2)], {
           type: "application/json",
         });
-
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -251,7 +393,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!file) return;
 
       let parsed;
-
       try {
         parsed = JSON.parse(await file.text());
       } catch {
@@ -259,11 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      if (
-        !confirm(
-          "Import will replace all current Reference Library data. Continue?",
-        )
-      ) {
+      if (!confirm("Import will replace all current Reference Library data. Continue?")) {
         return;
       }
 
@@ -273,7 +410,6 @@ document.addEventListener("DOMContentLoaded", () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(parsed),
         });
-
         const data = await resp.json();
 
         if (!data.success) {
@@ -301,10 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
     select.addEventListener("change", () => {
       const row = select.closest(".ref-row");
       const badge = row?.querySelector(".ref-group-badge");
-
-      if (badge) {
-        badge.textContent = select.value;
-      }
+      if (badge) badge.textContent = select.value;
     });
   });
 
@@ -315,7 +448,6 @@ document.addEventListener("DOMContentLoaded", () => {
     textarea.addEventListener("input", () => {
       const row = textarea.closest(".ref-row");
       const preview = row?.querySelector(".ref-notes-preview");
-
       if (preview) {
         const firstLine = textarea.value.split("\n")[0].slice(0, 80);
         preview.textContent = firstLine || "No notes yet.";
@@ -323,20 +455,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // =========================
-  // FILENAME DBLCLICK → OPEN FILE
-  // =========================
-  document.addEventListener("dblclick", async (e) => {
-    const nameSpan = e.target.closest(".ref-display-name");
-    if (!nameSpan) return;
-
-    const path = nameSpan.dataset.path;
-    if (!path) return;
-
-    try {
-      await fetch(`/open-file?path=${encodeURIComponent(path)}`);
-    } catch (err) {
-      console.error("DBLCLICK OPEN ERROR:", err);
-    }
-  });
 });

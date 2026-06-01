@@ -1,244 +1,53 @@
 {% extends "base.html" %}
-{% block title %}Mapping Q&A Board — SOP Hub{% endblock %}
+{% block title %}Ask a Mapping Question — SOP Hub{% endblock %}
 {% block content %}
 
 <style>
-    .qa-section-label {
-        font-size: .7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        color: #9ca3af;
-    }
-
-    .qa-question-card {
-        border: 1px solid #e5e7eb;
-        border-radius: .5rem;
-        background: white;
-        padding: .875rem 1rem;
-    }
-
-    .qa-question-title {
-        font-size: .95rem;
-        font-weight: 600;
-        color: #111827;
-    }
-
-    .qa-question-body {
-        font-size: .85rem;
-        color: #374151;
-        margin-top: .25rem;
-    }
-
-    .qa-meta {
-        font-size: .75rem;
-        color: #9ca3af;
-        margin-top: .25rem;
-    }
-
-    .qa-answer {
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: .375rem;
-        padding: .625rem .75rem;
-        margin-top: .5rem;
-    }
-
-    .qa-answer-best {
-        background: #f0fdf4;
-        border-color: #86efac;
-    }
-
-    .qa-answer-body {
-        font-size: .85rem;
-        color: #1f2937;
-        white-space: pre-wrap;
-    }
-
-    .qa-badge-open {
-        font-size: .7rem;
-        padding: .1rem .5rem;
-        border-radius: 9999px;
-        background: #dbeafe;
-        color: #1d4ed8;
-        font-weight: 600;
-    }
-
-    .qa-badge-answered {
-        font-size: .7rem;
-        padding: .1rem .5rem;
-        border-radius: 9999px;
-        background: #dcfce7;
-        color: #15803d;
-        font-weight: 600;
-    }
-
-    .qa-badge-archived {
-        font-size: .7rem;
-        padding: .1rem .5rem;
-        border-radius: 9999px;
-        background: #f3f4f6;
-        color: #6b7280;
-        font-weight: 600;
-    }
-
-    .qa-best-badge {
-        font-size: .7rem;
-        padding: .1rem .5rem;
-        border-radius: 9999px;
-        background: #dcfce7;
-        color: #15803d;
-        font-weight: 600;
-        margin-left: .5rem;
-    }
-
-    .qa-approved-badge {
-        font-size: .7rem;
-        padding: .1rem .5rem;
-        border-radius: 9999px;
-        background: #fef9c3;
-        color: #854d0e;
-        font-weight: 600;
-        margin-left: .25rem;
-    }
-
-    .qa-category {
-        font-size: .72rem;
-        padding: .1rem .5rem;
-        border-radius: .25rem;
-        background: #f3f4f6;
-        color: #6b7280;
-    }
-
-    .qa-no-answers {
-        font-size: .8rem;
-        color: #9ca3af;
-        padding: .375rem 0;
-        font-style: italic;
-    }
-
-    .qa-actions {
-        margin-top: .625rem;
-        padding-top: .5rem;
-        border-top: 1px solid #f3f4f6;
-        display: flex;
-        gap: .75rem;
-        flex-wrap: wrap;
-        align-items: center;
-    }
-
-    .qa-inline-form {
-        margin-top: .75rem;
-        padding: .75rem;
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: .375rem;
-    }
-
-    .sc-filter-btn {
-        padding: .25rem .75rem;
-        border-radius: 9999px;
-        border: 1px solid #d1d5db;
-        font-size: .78rem;
-        color: #6b7280;
-        background: white;
-        cursor: pointer;
-    }
-
-    .sc-filter-btn:hover {
-        background: #f3f4f6;
-    }
-
-    .sc-filter-active {
-        background: #1d4ed8;
-        color: white;
-        border-color: #1d4ed8;
-    }
-
-    .sc-filter-active:hover {
-        background: #1e40af;
-    }
+  .sc-tag-pill         { padding:.25rem .75rem; border-radius:9999px; border:1px solid #d1d5db;
+                         font-size:.78rem; color:#6b7280; background:white; cursor:pointer;
+                         white-space:nowrap; }
+  .sc-tag-pill:hover   { background:#f3f4f6; }
+  .sc-tag-active       { background:#1d4ed8; color:white; border-color:#1d4ed8; }
+  .sc-tag-active:hover { background:#1e40af; }
+  .sc-card-recent      { background:#f0fdf4 !important; border-color:#86efac !important; }
+  .sc-recent-badge     { font-size:.7rem; background:#dcfce7; color:#15803d;
+                         padding:.15rem .5rem; border-radius:9999px; font-weight:600;
+                         white-space:nowrap; flex-shrink:0; }
+  .sc-meta-date        { font-size:.7rem; color:#9ca3af; flex-shrink:0; }
 </style>
 
-<!-- HEADER -->
-<div class="mb-4">
-    <h1 class="text-2xl font-bold">Mapping Q&amp;A Board</h1>
-    <p class="text-sm text-gray-400 mt-1">Approved guidance and open questions from the Mapping Division.</p>
-</div>
+<h1 class="text-2xl font-bold mb-1">Ask a Mapping Question</h1>
+<p class="text-sm text-gray-500 mb-4">Search approved Mapping guidance. This does not generate new answers.</p>
 
-<!-- TOOLBAR -->
-<div class="flex flex-col sm:flex-row gap-3 mb-5 items-start sm:items-center">
-    <div class="sc-search-wrapper relative flex-1 max-w-xl">
-        <input id="scSearch" type="text" placeholder="Search questions, answers, or keywords..."
-            class="border p-2 rounded w-full text-sm" autocomplete="off">
-        <div id="scSuggestions" class="sc-suggestions hidden"></div>
+<div class="mb-5 max-w-2xl sc-search-wrapper">
+
+  <!-- SEARCH BAR + CLEAR ALL -->
+  <div class="flex gap-2 items-center">
+    <div class="relative flex-1">
+      <input id="scSearch"
+             type="text"
+             placeholder="Type a Mapping question or keyword..."
+             class="border p-2 rounded w-full text-sm"
+             autocomplete="off">
+      <div id="scSuggestions" class="sc-suggestions hidden"></div>
     </div>
-
-    <div id="scFilters" class="flex gap-1 flex-shrink-0 flex-wrap">
-        <button class="sc-filter-btn sc-filter-active" data-filter="all">All</button>
-        <button class="sc-filter-btn" data-filter="open">Open</button>
-        <button class="sc-filter-btn" data-filter="answered">Answered</button>
-        <button class="sc-filter-btn" data-filter="archived">Archived</button>
-    </div>
-
-    <button id="qaAskBtn"
-        class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 whitespace-nowrap flex-shrink-0">
-        + Ask a Question
+    <button id="scClearAll"
+            class="whitespace-nowrap text-sm border border-gray-300 rounded px-3 py-2
+                   text-gray-500 hover:bg-gray-100 flex-shrink-0">
+      Clear All
     </button>
+  </div>
+
+  <p class="text-xs text-gray-400 mt-1 mb-3">
+    Examples: bad legal, do not create transfer, tract multiple owners
+  </p>
+
+  <!-- TOPIC TAG PILLS -->
+  <div id="scTagPills" class="flex flex-wrap gap-1.5 min-h-[2rem]"></div>
+
 </div>
 
-<!-- ASK FORM -->
-<div id="qaAskForm" style="display:none;" class="mb-5 p-4 border rounded bg-white shadow-sm">
-    <div class="text-sm font-semibold text-gray-700 mb-3">New Question</div>
-    <div class="space-y-2">
-        <input id="qaAskTitle" type="text" placeholder="Question title (required)"
-            class="border rounded w-full text-sm p-2">
-        <textarea id="qaAskBody" rows="3" placeholder="Additional details (optional)"
-            class="border rounded w-full text-sm p-2 resize-none"></textarea>
-        <div class="flex gap-2 flex-wrap">
-            <div class="flex-1 min-w-[140px]">
-                <input id="qaAskBy" type="text" placeholder="Your name" class="border rounded text-sm p-1.5 w-full">
-                <p class="text-xs text-gray-400 mt-0.5">Optional. Leave blank to post as Mapping Technician.</p>
-            </div>
-            <input id="qaAskCategory" type="text" placeholder="Category (optional)"
-                class="border rounded text-sm p-1.5 flex-1 min-w-[140px]">
-            <input id="qaAskTags" type="text" placeholder="Tags, comma-separated"
-                class="border rounded text-sm p-1.5 flex-1 min-w-[140px]">
-        </div>
-        <div class="flex gap-2 pt-1">
-            <button id="qaAskSubmit" class="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700">
-                Submit Question
-            </button>
-            <button id="qaAskCancel" class="text-sm text-gray-400 hover:text-gray-600">
-                Cancel
-            </button>
-        </div>
-    </div>
-</div>
+<div id="scResults" class="space-y-4"></div>
 
-<!-- SCENARIO CARDS SECTION -->
-<div id="scSection" class="mb-8">
-    <div class="flex items-center gap-2 mb-3">
-        <span class="qa-section-label">Reference Answers</span>
-        <span id="scAnsweredCount" class="text-xs text-gray-400"></span>
-    </div>
-    <div id="scResults" class="space-y-3"></div>
-</div>
-
-<!-- QUESTIONS SECTION -->
-<div id="qaSection">
-    <div class="flex items-center gap-2 mb-3">
-        <span class="qa-section-label">Questions</span>
-        <span id="qaCount" class="text-xs text-gray-400"></span>
-    </div>
-    <div id="qaResults" class="space-y-3">
-        <div class="text-sm text-gray-400">Loading…</div>
-    </div>
-</div>
-
-<script>
-    window.QA_EDITOR_MODE = {{ 'true' if qa_editor_mode else 'false' }};
-</script>
-<script src="{{ url_for('static', filename='js/scenario_cards.js') }}?v=4"></script>
-<script src="{{ url_for('static', filename='js/qa_board.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/scenario_cards.js') }}?v=3"></script>
 {% endblock %}

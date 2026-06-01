@@ -146,8 +146,8 @@
       btn.addEventListener("click", () => {
         const panel = document.getElementById(`editPanel-${btn.dataset.id}`);
         if (!panel) return;
-        const open = panel.style.display !== "none";
-        panel.style.display = open ? "none" : "";
+        const open = panel.style.display === "block";
+        panel.style.display = open ? "none" : "block";
         btn.textContent = open ? "Edit" : "Close";
       });
     });

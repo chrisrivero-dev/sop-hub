@@ -19,31 +19,50 @@ def _to_dict(card):
     }
 
 
-def search_approved(query):
+def get_approved_tags():
+    from models.scenario_card import ScenarioCard
+
+    cards = ScenarioCard.query.filter_by(status="approved").all()
+    tags = set()
+    for card in cards:
+        if card.tags:
+            for t in card.tags.split(","):
+                t = t.strip()
+                if t:
+                    tags.add(t)
+    return sorted(tags, key=str.lower)
+
+
+def search_approved(query, tag=None):
     from models.scenario_card import ScenarioCard
 
     base = ScenarioCard.query.filter_by(status="approved")
 
     if not query or not query.strip():
-        return [_to_dict(c) for c in base.order_by(ScenarioCard.title).all()]
+        cards = base.order_by(ScenarioCard.updated_at.desc()).all()
+    else:
+        terms = query.strip().lower().split()
+        cards = []
+        for card in base.all():
+            haystack = " ".join([
+                card.title or "",
+                card.plain_english_answer or "",
+                card.what_to_do or "",
+                card.trigger_phrases or "",
+                card.tags or "",
+            ]).lower()
+            if all(term in haystack for term in terms):
+                cards.append(card)
+        cards.sort(key=lambda c: c.updated_at or c.title, reverse=True)
 
-    terms = query.strip().lower().split()
-    results = []
+    if tag:
+        tag_lower = tag.strip().lower()
+        cards = [
+            c for c in cards
+            if tag_lower in [t.strip().lower() for t in (c.tags or "").split(",")]
+        ]
 
-    for card in base.all():
-        haystack = " ".join([
-            card.title or "",
-            card.plain_english_answer or "",
-            card.what_to_do or "",
-            card.trigger_phrases or "",
-            card.tags or "",
-        ]).lower()
-
-        if all(term in haystack for term in terms):
-            results.append(card)
-
-    results.sort(key=lambda c: c.title)
-    return [_to_dict(c) for c in results]
+    return [_to_dict(c) for c in cards]
 
 
 def get_all_cards(status=None, query=None):

@@ -72,33 +72,40 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
 
     return `
-      <div class="p-3 border-l-4 border-red-500 bg-white shadow-sm rounded">
-        <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Recommended Action</div>
-        <div class="text-2xl font-bold text-red-600">${escapeHtml(actions.join(", "))}</div>
-        <div class="mt-2 text-xs text-gray-400">Based on ${examples.length} prior processed documents</div>
+      <div class="p-4 border rounded bg-white shadow-sm">
+        <div class="text-sm text-gray-500 mb-2">RECOMMENDED ACTION</div>
+        <div class="text-2xl font-bold text-red-600">
+          ${escapeHtml(actions.join(", "))}
+        </div>
+        <div class="mt-3 text-xs bg-yellow-100 px-3 py-2 rounded text-yellow-800">
+          Based on ${examples.length} prior processed documents
+        </div>
       </div>
     `;
   }
 
   function renderRelatedFiles(files) {
+    const count = files.length;
     let html = `
-      <div class="border rounded bg-white shadow-sm">
-        <div class="px-3 py-2 bg-gray-50 border-b text-xs text-gray-400 uppercase tracking-wide font-semibold">Related Files</div>
-        <div class="px-3">
+      <div class="p-4 border rounded bg-white shadow-sm">
+        <div class="text-sm text-gray-500 mb-2">RELATED FILES
+          ${count > 0 ? `<span class="text-xs font-normal text-gray-400">(${count} found)</span>` : ""}
+        </div>
     `;
-    if (!files.length) {
-      html += `<div class="px-3 py-3 text-sm text-gray-400">No related files found.</div></div>`;
+
+    if (!count) {
+      html += `<div class="text-sm text-gray-500">No related files found.</div></div>`;
       return html;
     }
 
     html += `<div class="max-h-72 overflow-y-auto">`;
 
-    files.slice(0, 15).forEach((file) => {
+    files.forEach((file) => {
       html += `
-        <div class="flex items-center border-b py-2 gap-3">
+        <div class="flex items-center border-b py-2 gap-2">
           <button
             type="button"
-            class="pin-btn flex-shrink-0 font-bold text-white bg-green-600 hover:bg-green-700 rounded w-9 h-9 flex items-center justify-center text-xl leading-none border-2 border-green-700"
+            class="pin-btn flex-shrink-0 font-bold text-white bg-green-600 hover:bg-green-700 rounded px-2 py-0.5 text-sm leading-none"
             data-name="${escapeHtml(file.name)}"
             data-path="${escapeHtml(file.full_path)}"
             data-selected="false"
@@ -107,23 +114,16 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
 
           <a href="#"
-             class="preview-file text-blue-700 font-semibold shrink min-w-0 truncate"
+             class="preview-file text-blue-700 font-semibold flex-1 min-w-0 truncate"
              data-path="${escapeHtml(file.full_path)}"
-             title="${escapeHtml(file.full_path)}">
+             title="Click to open: ${escapeHtml(file.full_path)}">
             ${escapeHtml(file.name)}
-          </a>
-
-          <a href="#"
-             class="open-file text-xs text-gray-500 hover:text-blue-600 whitespace-nowrap flex-shrink-0"
-             data-path="${escapeHtml(file.full_path)}"
-             title="Open source file">
-            Open File
           </a>
         </div>
       `;
     });
 
-    html += `</div></div></div>`;
+    html += `</div></div>`;
     return html;
   }
 
@@ -164,12 +164,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.pinned) {
         buttonEl.dataset.selected = "true";
         buttonEl.textContent = "✓";
-        buttonEl.classList.remove(
-          "bg-green-600",
-          "hover:bg-green-700",
-          "border-green-700",
-        );
-        buttonEl.classList.add("bg-yellow-500", "border-yellow-600");
+        buttonEl.classList.remove("bg-green-600", "hover:bg-green-700");
+        buttonEl.classList.add("bg-yellow-500");
 
         if (!selectedItems.find((item) => item.path === filePath)) {
           selectedItems.push({ name: fileName, path: filePath });
@@ -188,26 +184,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
       buttonEl.dataset.selected = "false";
       buttonEl.textContent = "+";
-      buttonEl.classList.remove("bg-yellow-500", "border-yellow-600");
-      buttonEl.classList.add(
-        "bg-green-600",
-        "hover:bg-green-700",
-        "border-green-700",
-      );
+      buttonEl.classList.remove("bg-yellow-500");
+      buttonEl.classList.add("bg-green-600", "hover:bg-green-700");
       selectedItems = selectedItems.filter((item) => item.path !== filePath);
     } catch (error) {
       console.error("PIN ERROR:", error);
     }
   }
-
   function bindEvents() {
     selectedItems = [];
 
     document.querySelectorAll(".preview-file").forEach((link) => {
       const path = link.dataset.path;
 
-      link.addEventListener("click", (event) => {
+      link.addEventListener("click", async (event) => {
         event.preventDefault();
+        try { await fetch(`/open-file?path=${encodeURIComponent(path)}`); }
+        catch (err) { console.error("OPEN ERROR:", err); }
         if (window.loadReferencePreview) window.loadReferencePreview(path);
       });
 
@@ -216,24 +209,9 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    document.querySelectorAll(".open-file").forEach((link) => {
-      const path = link.dataset.path;
-
-      link.addEventListener("click", async (event) => {
-        event.preventDefault();
-        await fetch(`/open-file?path=${encodeURIComponent(path)}`);
-      });
-    });
-
     document.querySelectorAll(".pin-btn").forEach((button) => {
       button.dataset.selected = "false";
       button.textContent = "+";
-      button.classList.remove("bg-yellow-500", "border-yellow-600");
-      button.classList.add(
-        "bg-green-600",
-        "hover:bg-green-700",
-        "border-green-700",
-      );
 
       button.addEventListener("click", async () => {
         await togglePin(button);

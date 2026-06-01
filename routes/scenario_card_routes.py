@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, render_template, abort, current_app
 from services.scenario_card_service import (
     search_approved,
+    get_approved_tags,
     get_all_cards,
     update_card,
     approve_card,
@@ -23,10 +24,16 @@ def ask_mapping_question():
     return render_template("ask_mapping_question.html")
 
 
+@scenario_card_bp.get("/scenario-cards/tags")
+def scenario_card_tags():
+    return jsonify({"ok": True, "tags": get_approved_tags()}), 200
+
+
 @scenario_card_bp.get("/scenario-cards/search")
 def search_scenario_cards():
-    q = request.args.get("q", "").strip()
-    results = search_approved(q)
+    q   = request.args.get("q",   "").strip()
+    tag = request.args.get("tag", "").strip() or None
+    results = search_approved(q, tag=tag)
     return jsonify({"ok": True, "results": results, "count": len(results)}), 200
 
 
