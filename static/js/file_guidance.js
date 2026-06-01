@@ -118,13 +118,7 @@
           <div class="fg-full-value">${esc(text)}</div>
         </div>`);
     };
-    addRow("Role", guidance.role);
     addRow("Purpose", guidance.what_this_file_is_for);
-    addRow("When to use", guidance.when_to_use);
-    addRow("Avoid when", guidance.do_not_use_when);
-    addRow("Helps with", guidance.helps_with);
-    addRow("Cautions", guidance.cautions);
-    addRow("Related files", guidance.related_files);
     addRow("Tags", guidance.tags);
     if (status === "approved" && guidance.approved_by) {
       addRow("Approved by", guidance.approved_by);
@@ -198,13 +192,7 @@
       <div class="fg-edit-form hidden">
         <p class="fg-helper-text">Curated file guidance. Drafts should be reviewed before approval.</p>
         <div class="fg-fields space-y-2">
-          ${shortField("Role", "role", guidance.role)}
           ${textField("Purpose", "what_this_file_is_for", guidance.what_this_file_is_for)}
-          ${textField("When to use", "when_to_use", guidance.when_to_use)}
-          ${textField("Avoid when", "do_not_use_when", guidance.do_not_use_when)}
-          ${listField("Helps with", "helps_with", guidance.helps_with)}
-          ${textField("Cautions", "cautions", guidance.cautions)}
-          ${listField("Related files", "related_files", guidance.related_files)}
           ${listField("Tags", "tags", guidance.tags)}
           ${approvedByRow}
         </div>
@@ -430,13 +418,7 @@
         file_path: filePath,
         file_name: sectionEl.closest(".ref-row")?.dataset.file || "",
         status: "draft",
-        role: "",
         what_this_file_is_for: "",
-        when_to_use: "",
-        do_not_use_when: "",
-        helps_with: [],
-        cautions: "",
-        related_files: [],
         tags: [],
         approved_by: "",
       });

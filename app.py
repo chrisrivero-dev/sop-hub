@@ -11,7 +11,8 @@ from services.workspace_service import copy_reference_to_workspace
 from services.excel_preview_service import build_excel_preview
 from services.word_preview_service import build_word_preview
 from routes.file_summary_routes import file_summary_bp
-from routes.topic_summary_routes import topic_summary_bp
+from routes.file_guidance_routes import file_guidance_bp
+from routes.scenario_card_routes import scenario_card_bp
 import docx
 import os
 import re
@@ -32,28 +33,21 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 EXCEL_FILENAME = "ParcelingLogCRTEMP.xlsx"
 
-# In-memory cache: avoid re-reading Excel on every search request.
-_excel_cache = {"mtime": None, "rows": []}
 
-
-def _load_excel_rows():
-    """Parse ParcelingLogCRTEMP.xlsx into a list of row dicts. Cached by mtime."""
-    excel_path = os.path.join(BASE_DIR, EXCEL_FILENAME)
-
-    if not os.path.exists(excel_path):
-        return []
+def load_excel_examples(query):
+    results = []
 
     try:
-        mtime = os.path.getmtime(excel_path)
-    except OSError:
-        return []
+        excel_path = os.path.join(BASE_DIR, EXCEL_FILENAME)
 
-    if _excel_cache["mtime"] == mtime and _excel_cache["rows"] is not None:
-        return _excel_cache["rows"]
+        print("📂 LOOKING FOR EXCEL AT:", excel_path)
 
-    rows = []
-    try:
+        if not os.path.exists(excel_path):
+            print(f"[ERROR] Excel file NOT FOUND at: {excel_path}")
+            return []
+
         xl = pd.ExcelFile(excel_path)
+
         target_sheets = ["PARCELING", "DOC SCREENING"]
 
         for sheet in target_sheets:
@@ -64,18 +58,42 @@ def _load_excel_rows():
             df = df.fillna("")
 
             for _, row in df.iterrows():
+
                 drn = str(row.get("DRN", "")).strip()
                 action = str(row.get("Action", "")).strip()
-
-                if not drn.isdigit() or not action:
-                    continue
-
                 remarks = str(row.get("Remarks", "")).strip()
                 apn = str(row.get("APN", "")).strip()
                 date = str(row.get("Date", "")).strip()
                 notes = str(row.get("Notes", "")).strip()
                 example_file_raw = str(row.get("Example_File", "")).strip()
 
+                # -------------------------
+                # FILTER BAD ROWS
+                # -------------------------
+                if not drn.isdigit():
+                    continue
+
+                if not action:
+                    continue
+
+                # -------------------------
+                # SEARCH MATCH
+                # -------------------------
+                combined = " ".join([
+                    drn,
+                    action,
+                    remarks,
+                    apn,
+                    date,
+                    notes,
+                ]).lower()
+
+                if query.lower() not in combined:
+                    continue
+
+                # -------------------------
+                # BUILD REAL FILE PATH
+                # -------------------------
                 example_file_path = ""
                 if example_file_raw:
                     example_file_path = os.path.join(
@@ -83,7 +101,7 @@ def _load_excel_rows():
                         example_file_raw
                     )
 
-                rows.append({
+                results.append({
                     "drn": drn,
                     "action": action,
                     "remarks": remarks,
@@ -92,28 +110,14 @@ def _load_excel_rows():
                     "notes": notes,
                     "example_file": example_file_path,
                     "sheet": sheet,
-                    "_combined": " ".join([drn, action, remarks, apn, date, notes]).lower(),
                 })
 
-        _excel_cache["mtime"] = mtime
-        _excel_cache["rows"] = rows
+        return results[:10]
 
     except Exception as e:
         print("Excel read error:", e)
-
-    return rows
-
-
-def load_excel_examples(query):
-    rows = _load_excel_rows()
-
-    if not query:
         return []
 
-    q = query.lower()
-    matched = [r for r in rows if q in r["_combined"]]
-
-    return [{k: v for k, v in r.items() if k != "_combined"} for r in matched[:10]]
 
 template_dir = os.path.join(BASE_DIR, "templates")
 static_dir   = os.path.join(BASE_DIR, "static")
@@ -124,11 +128,8 @@ app = Flask(
     template_folder=template_dir
 )
 app.register_blueprint(file_summary_bp)
-from routes.file_guidance_routes import file_guidance_bp
-from routes.scenario_card_routes import scenario_card_bp
 app.register_blueprint(file_guidance_bp)
 app.register_blueprint(scenario_card_bp)
-app.register_blueprint(topic_summary_bp)
 
 # ======================================================
 # PREVIEW SYSTEM (THUMBNAIL-BASED)
@@ -222,6 +223,16 @@ db.init_app(app)
 migrate.init_app(app, db)
 from models.file_guidance import FileGuidance      # noqa: F401 — Flask-Migrate discovery
 from models.scenario_card import ScenarioCard      # noqa: F401 — Flask-Migrate discovery
+
+import os as _os
+app.config.setdefault(
+    "QA_EDITOR_MODE",
+    _os.environ.get("QA_EDITOR_MODE", "").lower() in ("1", "true", "yes"),
+)
+
+@app.context_processor
+def _inject_editor_mode():
+    return {"qa_editor_mode": app.config.get("QA_EDITOR_MODE", False)}
 
 
 
@@ -459,6 +470,7 @@ def sort_results(ranked, query_lower):
 
     return xls_files + other_files
 
+
 def run_search(query, mode="filename"):
     query_lower = query.lower()
     ranked_results = []
@@ -482,37 +494,29 @@ def run_search(query, mode="filename"):
 
     # 1) INDEXED SEARCH
     if indexed and len(indexed) > 0:
-        # Load all Reference rows once — avoids N+1 per-item queries
-        ref_map = {
-            r.file_path: r.id
-            for r in Reference.query.with_entities(
-                Reference.file_path,
-                Reference.id,
-            ).all()
-        }
-
         for item in indexed:
+            file_lower = (item.file_name or "").lower()
             snippet = ""
 
             if mode == "content" and item.content:
                 idx = item.content.lower().find(query_lower)
                 if idx != -1:
-                    snippet = item.content[max(0, idx - 60):idx + 60]
+                    snippet = item.content[max(0, idx - 60): idx + 60]
 
             key = (item.file_path or "").lower()
             if not key or key in seen:
                 continue
             seen.add(key)
 
-            ref_id = ref_map.get(item.file_path, 0)
+            ref = Reference.query.filter_by(file_path=item.file_path).first()
 
             entry = {
                 "name": item.file_name,
                 "folder": item.folder,
                 "full_path": item.file_path,
                 "snippet": snippet,
-                "is_pinned": ref_id > 0,
-                "ref_id": ref_id,
+                "is_pinned": True if ref else False,
+                "ref_id": ref.id if ref else 0,
                 "file_type": item.ext,
             }
 
@@ -524,7 +528,6 @@ def run_search(query, mode="filename"):
     # 2) FALLBACK SLOW SEARCH
     print("⚠️ No indexed records found — using slow filesystem search")
     return run_slow_search(query, mode)
-
 
 
 
@@ -748,7 +751,6 @@ def index_qdrive_files():
                 ext = ext.lower()
 
                               # Only index selected file types
-                # Only index selected file types
                 if ext not in [
                     ".txt",
                     ".doc", ".docx",
@@ -757,10 +759,6 @@ def index_qdrive_files():
                     ".pptx",
                     ".png", ".jpg", ".jpeg",
                 ]:
-                    continue
-
-                # Skip companion preview images (same basename as a source file)
-                if is_generated_preview_asset(full_path):
                     continue
 
 
@@ -848,6 +846,7 @@ def launch_browser_once():
 
     threading.Timer(1.0, open_browser).start()
 
+
 # ======================================================
 # ROUTES
 # ======================================================
@@ -855,17 +854,14 @@ def launch_browser_once():
 @app.route("/")
 def index():
     recent = Recent.query.order_by(Recent.opened_at.desc()).limit(10).all()
-    paths = [r.file_path for r in recent]
-    pinned_paths = set()
-    if paths:
-        pinned_paths = {
-            ref.file_path
-            for ref in Reference.query.filter(
-                Reference.file_path.in_(paths),
-                Reference.pinned == True
-            ).all()
-        }
-    return render_template("index.html", recent=recent, pinned_paths=pinned_paths)
+    return render_template("index.html", recent=recent)
+
+def is_index_empty():
+    with app.app_context():
+        try:
+            return FileIndex.query.count() == 0
+        except Exception:
+            return True
 @app.route("/ping")
 def ping():
     print("🔥 PING HIT")
@@ -888,6 +884,10 @@ def search():
         results = run_search(query, mode)
         examples = load_excel_examples(query)
 
+        # TEMP FORCE TEST
+        if not examples:
+            examples = load_excel_examples("")  # load ALL rows
+
         print("🔥 RESULTS:", len(results))
         print("🔥 EXAMPLES:", len(examples))
 
@@ -904,12 +904,7 @@ def search():
             "examples": [],
             "fallback_message": "Search failed."
         }), 500
-def is_index_empty():
-    try:
-        return FileIndex.query.first() is None
-    except Exception as exc:
-        print(f"⚠️ Could not check file index state: {exc}")
-        return True
+
 @app.route("/search-hub")
 def search_hub():
     first_time = is_index_empty()
@@ -1269,9 +1264,10 @@ def import_settings():
 
 
 if __name__ == "__main__":
+    launch_browser_once()
     app.run(
         host="127.0.0.1",
-        port=5050,
+        port=5050,  # CHANGED FROM 5000 → 5050
         debug=True,
         use_reloader=False
     )

@@ -104,13 +104,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".group-select").forEach((select) => {
     select.addEventListener("change", () => {
       saveReferenceField(select, "group", select.value);
-
-      const row = select.closest(".ref-row");
-      const copyBtn = row?.querySelector(".copy-workspace");
-
-      if (copyBtn) {
-        copyBtn.dataset.group = select.value;
-      }
     });
   });
 });

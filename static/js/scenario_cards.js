@@ -1,8 +1,7 @@
 /* =====================================================
-   SCENARIO CARDS — UI
-   Owns: search input, autocomplete suggestions,
-         result rendering on /ask-mapping-question.
-   No AI. No LLM. No cloud. Local suggestions only.
+   SCENARIO CARDS — UI  v4
+   Owns: Reference Answers section on Q&A Board.
+   No AI. No LLM. No cloud. Local only.
 ===================================================== */
 
 (function () {
@@ -11,10 +10,11 @@
   const searchInput = document.getElementById("scSearch");
   const resultsEl = document.getElementById("scResults");
   const suggestionsEl = document.getElementById("scSuggestions");
+  const countEl = document.getElementById("scAnsweredCount");
+  const scSection = document.getElementById("scSection");
 
-  if (!searchInput || !resultsEl) return;
+  if (!resultsEl) return;
 
-  // ---- STATIC LOCAL SUGGESTION LIST ----
   const SUGGESTIONS = [
     "bad legal",
     "wrong legal",
@@ -40,18 +40,18 @@
       .replace(/>/g, "&gt;");
   }
 
-  // ---- HELP STATE ----
-  function showHelpState() {
-    resultsEl.innerHTML = `
-      <div class="text-sm text-gray-400">
-        Type a Mapping question or keyword to search approved guidance.
-      </div>`;
-  }
+  // ---- FILTER INTEGRATION ----
+  // Hide Reference Answers when filter is Open or Archived (not relevant there)
+  document.getElementById("scFilters")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".sc-filter-btn");
+    if (!btn || !scSection) return;
+    const f = btn.dataset.filter;
+    scSection.style.display = f === "open" || f === "archived" ? "none" : "";
+  });
 
   // ---- AUTOCOMPLETE ----
   function showSuggestions(query) {
-    if (!suggestionsEl) return;
-    if (!query || !query.trim()) {
+    if (!suggestionsEl || !query.trim()) {
       hideSuggestions();
       return;
     }
@@ -78,39 +78,32 @@
     suggestionsEl.innerHTML = "";
   }
 
-  if (suggestionsEl) {
-    // mousedown fires before blur so preventDefault keeps focus long enough
-    suggestionsEl.addEventListener("mousedown", (e) => {
-      const item = e.target.closest(".sc-suggestion-item");
-      if (!item) return;
-      e.preventDefault();
-      searchInput.value = item.dataset.value;
-      hideSuggestions();
-      search(item.dataset.value);
-    });
-  }
-
-  searchInput.addEventListener("blur", () => {
-    setTimeout(hideSuggestions, 150);
+  suggestionsEl?.addEventListener("mousedown", (e) => {
+    const item = e.target.closest(".sc-suggestion-item");
+    if (!item) return;
+    e.preventDefault();
+    searchInput.value = item.dataset.value;
+    hideSuggestions();
+    search(item.dataset.value);
   });
 
-  searchInput.addEventListener("keydown", (e) => {
+  searchInput?.addEventListener("blur", () => setTimeout(hideSuggestions, 150));
+  searchInput?.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       hideSuggestions();
       searchInput.blur();
     }
   });
 
-  // ---- RENDER HELPERS ----
+  // ---- RENDER ----
   function renderTags(tagStr) {
     if (!tagStr || !tagStr.trim()) return "";
-    const tags = tagStr
+    return `<div class="sc-tags">${tagStr
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean)
       .map((t) => `<span class="sc-tag">${esc(t)}</span>`)
-      .join("");
-    return `<div class="sc-tags">${tags}</div>`;
+      .join("")}</div>`;
   }
 
   function renderField(label, value, extraClass) {
@@ -131,7 +124,7 @@
       <div class="sc-card">
         <div class="sc-card-header">
           <span class="sc-title">${esc(c.title)}</span>
-          <span class="sc-approved-badge">Approved</span>
+          <span class="sc-approved-badge">✓ Answered</span>
         </div>
         ${renderField("Answer", c.plain_english_answer, "")}
         ${renderField("What to do", c.what_to_do, "sc-pre")}
@@ -143,11 +136,9 @@
   }
 
   function renderCards(cards) {
+    if (countEl) countEl.textContent = cards.length ? `(${cards.length})` : "";
     if (!cards.length) {
-      resultsEl.innerHTML = `
-        <div class="text-sm text-gray-400">
-          No approved Scenario Card found. Try different keywords or ask a senior technician.
-        </div>`;
+      resultsEl.innerHTML = `<div class="text-sm text-gray-400">No approved reference answers found.</div>`;
       return;
     }
     resultsEl.innerHTML = cards.map(renderCard).join("");
@@ -162,23 +153,19 @@
       const data = await resp.json();
       if (data.ok) renderCards(data.results);
     } catch (err) {
-      resultsEl.innerHTML = `<div class="text-sm text-red-400">Could not load results.</div>`;
+      resultsEl.innerHTML = `<div class="text-sm text-red-400">Could not load reference answers.</div>`;
       console.error("SC SEARCH ERROR:", err);
     }
   }
 
   // ---- INPUT HANDLER ----
-  searchInput.addEventListener("input", () => {
+  searchInput?.addEventListener("input", () => {
     const q = searchInput.value.trim();
     showSuggestions(q);
     clearTimeout(debounceTimer);
-    if (q.length < 2) {
-      showHelpState();
-      return;
-    }
     debounceTimer = setTimeout(() => search(q), 250);
   });
 
-  // On page load: show help state only, no automatic search
-  showHelpState();
+  // ---- INIT: load all approved cards immediately ----
+  search("");
 })();

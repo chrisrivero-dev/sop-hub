@@ -72,27 +72,22 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
 
     return `
-      <div class="p-4 border rounded bg-white shadow-sm">
-        <div class="text-sm text-gray-500 mb-2">RECOMMENDED ACTION</div>
-        <div class="text-2xl font-bold text-red-600">
-          ${escapeHtml(actions.join(", "))}
-        </div>
-        <div class="mt-3 text-xs bg-yellow-100 px-3 py-2 rounded text-yellow-800">
-          Based on ${examples.length} prior processed documents
-        </div>
+      <div class="p-3 border-l-4 border-red-500 bg-white shadow-sm rounded">
+        <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Recommended Action</div>
+        <div class="text-2xl font-bold text-red-600">${escapeHtml(actions.join(", "))}</div>
+        <div class="mt-2 text-xs text-gray-400">Based on ${examples.length} prior processed documents</div>
       </div>
     `;
   }
 
   function renderRelatedFiles(files) {
     let html = `
-      <div class="p-4 border rounded bg-white shadow-sm">
-        <div class="text-sm text-gray-500 mb-2">RELATED FILES</div>
+      <div class="border rounded bg-white shadow-sm">
+        <div class="px-3 py-2 bg-gray-50 border-b text-xs text-gray-400 uppercase tracking-wide font-semibold">Related Files</div>
+        <div class="px-3">
     `;
-
     if (!files.length) {
-      html += `<div class="text-sm text-gray-500">No related files found.</div>`;
-      html += `</div>`;
+      html += `<div class="px-3 py-3 text-sm text-gray-400">No related files found.</div></div>`;
       return html;
     }
 
@@ -100,15 +95,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     files.slice(0, 15).forEach((file) => {
       html += `
-        <div class="flex items-center border-b py-2 gap-2">
+        <div class="flex items-center border-b py-2 gap-3">
           <button
             type="button"
-            class="pin-btn text-base font-bold leading-none flex-shrink-0"
+            class="pin-btn flex-shrink-0 font-bold text-white bg-green-600 hover:bg-green-700 rounded w-9 h-9 flex items-center justify-center text-xl leading-none border-2 border-green-700"
             data-name="${escapeHtml(file.name)}"
             data-path="${escapeHtml(file.full_path)}"
             data-selected="false"
-            title="Add to Reference Library"
-            style="color:#6B7280;">
+            title="Add to Reference Library">
             +
           </button>
 
@@ -129,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     });
 
-    html += `</div></div>`;
+    html += `</div></div></div>`;
     return html;
   }
 
@@ -169,8 +163,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (data.pinned) {
         buttonEl.dataset.selected = "true";
-        buttonEl.style.color = "#16a34a";
         buttonEl.textContent = "✓";
+        buttonEl.classList.remove(
+          "bg-green-600",
+          "hover:bg-green-700",
+          "border-green-700",
+        );
+        buttonEl.classList.add("bg-yellow-500", "border-yellow-600");
 
         if (!selectedItems.find((item) => item.path === filePath)) {
           selectedItems.push({ name: fileName, path: filePath });
@@ -188,8 +187,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       buttonEl.dataset.selected = "false";
-      buttonEl.style.color = "#6B7280";
       buttonEl.textContent = "+";
+      buttonEl.classList.remove("bg-yellow-500", "border-yellow-600");
+      buttonEl.classList.add(
+        "bg-green-600",
+        "hover:bg-green-700",
+        "border-green-700",
+      );
       selectedItems = selectedItems.filter((item) => item.path !== filePath);
     } catch (error) {
       console.error("PIN ERROR:", error);
@@ -223,8 +227,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.querySelectorAll(".pin-btn").forEach((button) => {
       button.dataset.selected = "false";
-      button.style.color = "#6B7280";
       button.textContent = "+";
+      button.classList.remove("bg-yellow-500", "border-yellow-600");
+      button.classList.add(
+        "bg-green-600",
+        "hover:bg-green-700",
+        "border-green-700",
+      );
 
       button.addEventListener("click", async () => {
         await togglePin(button);
