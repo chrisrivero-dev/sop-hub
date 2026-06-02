@@ -313,49 +313,60 @@
     submitForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const titleEl = submitForm.querySelector("[name='title']");
-      const title   = titleEl.value.trim();
-      if (!title) { titleEl.focus(); return; }
+      const title   = (titleEl?.value || "").trim();
+      if (!title) { titleEl?.focus(); return; }
 
-      const notes       = submitForm.querySelector("[name='notes']").value.trim();
-      const submittedBy = submitForm.querySelector("[name='submitted_by']").value.trim();
+      const notes       = (submitForm.querySelector("[name='notes']")?.value || "").trim();
+      const submittedBy = (submitForm.querySelector("[name='submitted_by']")?.value || "").trim();
       const submitBtn   = submitForm.querySelector("[type='submit']");
 
-      submitBtn.disabled = true;
+      submitBtn.disabled    = true;
       submitBtn.textContent = "Submitting…";
-      submitMsg.textContent = "";
+      if (submitMsg) { submitMsg.textContent = ""; submitMsg.className = "text-sm"; }
 
       try {
         const resp = await fetch("/scenario-cards/submit", {
-          method: "POST",
+          method:  "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, notes, submitted_by: submittedBy }),
+          body:    JSON.stringify({ title, notes, submitted_by: submittedBy }),
         });
-        const data = await resp.json();
-        if (data.ok) {
+
+        // Success: backend returns 201 { ok: true } — no card object needed
+        if (resp.status === 201) {
           submitForm.reset();
           closeAskPanel();
-          // Brief success confirmation near the Ask New Question button
           if (askNewBtn) {
-            const prev = askNewBtn.textContent;
-            askNewBtn.textContent = "✓ Question submitted";
-            askNewBtn.classList.add("bg-green-600");
-            askNewBtn.classList.remove("bg-blue-600", "hover:bg-blue-700");
+            askNewBtn.textContent = "✓ Submitted";
+            askNewBtn.style.background = "#16a34a";  // green-600 inline avoids Tailwind scan
             setTimeout(() => {
               askNewBtn.textContent = "Ask New Question";
-              askNewBtn.classList.remove("bg-green-600");
-              askNewBtn.classList.add("bg-blue-600", "hover:bg-blue-700");
+              askNewBtn.style.background = "";
             }, 4000);
           }
-        } else {
-          submitMsg.className = "text-sm text-red-500";
-          submitMsg.textContent = data.error || "Submission failed.";
+          return;
         }
+
+        // Non-201: try to read error message from JSON body
+        let errMsg = "Submission failed.";
+        try {
+          const errData = await resp.json();
+          if (errData.error) errMsg = errData.error;
+        } catch { /* response body not JSON — use default */ }
+
+        if (submitMsg) {
+          submitMsg.className  = "text-sm text-red-500";
+          submitMsg.textContent = errMsg;
+        }
+
       } catch (err) {
-        submitMsg.className = "text-sm text-red-500";
-        submitMsg.textContent = "Submission failed. Please try again.";
+        // Network-level failure
         console.error("SC SUBMIT ERROR:", err);
+        if (submitMsg) {
+          submitMsg.className  = "text-sm text-red-500";
+          submitMsg.textContent = "Network error. Please check your connection and try again.";
+        }
       } finally {
-        submitBtn.disabled = false;
+        submitBtn.disabled    = false;
         submitBtn.textContent = "Submit Question";
       }
     });
