@@ -3,6 +3,8 @@ from services.scenario_card_service import (
     search_approved,
     get_approved_tags,
     get_all_cards,
+    submit_question,
+    create_card,
     update_card,
     approve_card,
     mark_needs_review_card,
@@ -37,6 +39,15 @@ def search_scenario_cards():
     return jsonify({"ok": True, "results": results, "count": len(results)}), 200
 
 
+@scenario_card_bp.post("/scenario-cards/submit")
+def submit_scenario_question():
+    data = request.get_json(force=True) or {}
+    result = submit_question(data)
+    if result is None:
+        return jsonify({"ok": False, "error": "Question title is required."}), 400
+    return jsonify({"ok": True}), 201
+
+
 # ── ADMIN (editor only) ──────────────────────────────────
 
 @scenario_card_bp.get("/scenario-cards/admin")
@@ -58,6 +69,15 @@ def scenario_card_admin_data():
         "needs_review": len(get_all_cards(status="needs_review")),
     }
     return jsonify({"ok": True, "cards": cards, "counts": counts})
+
+
+@scenario_card_bp.post("/scenario-cards")
+def create_scenario_card():
+    _require_editor()
+    data = request.get_json(force=True) or {}
+    if not (data.get("title") or "").strip():
+        return jsonify({"ok": False, "error": "Title is required."}), 400
+    return jsonify({"ok": True, "card": create_card(data)}), 201
 
 
 @scenario_card_bp.route("/scenario-cards/<int:card_id>", methods=["PATCH"])

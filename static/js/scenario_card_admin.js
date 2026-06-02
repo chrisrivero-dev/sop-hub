@@ -305,7 +305,83 @@
     debounceTimer = setTimeout(load, 280);
   });
 
+  // ── CREATE PANEL ─────────────────────────────────────
+
+  function initCreatePanel() {
+    const toggleBtn = document.getElementById("scaAddNewBtn");
+    const panel     = document.getElementById("scaCreatePanel");
+    const saveBtn   = document.getElementById("scaSaveNew");
+    const cancelBtn = document.getElementById("scaCancelNew");
+    const msgEl     = document.getElementById("scaCreateMsg");
+
+    if (!toggleBtn || !panel) return;
+
+    function closePanel() {
+      panel.style.display = "none";
+      toggleBtn.textContent = "＋ Add New Card";
+      if (msgEl) msgEl.textContent = "";
+    }
+
+    toggleBtn.addEventListener("click", () => {
+      const open = panel.style.display === "block";
+      panel.style.display = open ? "none" : "block";
+      toggleBtn.textContent = open ? "＋ Add New Card" : "✕ Close";
+      if (!open) document.getElementById("scaNewTitle")?.focus();
+    });
+
+    cancelBtn?.addEventListener("click", closePanel);
+
+    saveBtn?.addEventListener("click", async () => {
+      const title = (document.getElementById("scaNewTitle")?.value || "").trim();
+      if (!title) {
+        document.getElementById("scaNewTitle")?.focus();
+        if (msgEl) msgEl.textContent = "Title is required.";
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving…";
+      if (msgEl) msgEl.textContent = "";
+
+      try {
+        const resp = await fetch("/scenario-cards", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title,
+            plain_english_answer: (document.getElementById("scaNewAnswer")?.value || "").trim(),
+            what_to_do:           (document.getElementById("scaNewWhatToDo")?.value || "").trim(),
+            tags:                 (document.getElementById("scaNewTags")?.value || "").trim(),
+            status:               document.getElementById("scaNewStatus")?.value || "draft",
+          }),
+        });
+        const data = await resp.json();
+        if (data.ok) {
+          // Reset fields
+          ["scaNewTitle", "scaNewAnswer", "scaNewWhatToDo", "scaNewTags"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+          });
+          const statusEl = document.getElementById("scaNewStatus");
+          if (statusEl) statusEl.value = "draft";
+          closePanel();
+          await load();
+        } else {
+          if (msgEl) msgEl.textContent = data.error || "Save failed.";
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save Card";
+        }
+      } catch (err) {
+        console.error("CREATE ERROR:", err);
+        if (msgEl) msgEl.textContent = "Unexpected error. Please try again.";
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Card";
+      }
+    });
+  }
+
   // ── INIT ─────────────────────────────────────────────
 
+  initCreatePanel();
   load();
 })();

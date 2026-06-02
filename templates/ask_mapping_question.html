@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Ask a Mapping Question — SOP Hub{% endblock %}
+{% block title %}Mapping Q&A — SOP Hub{% endblock %}
 {% block content %}
 
 <style>
@@ -15,16 +15,26 @@
                          padding:.15rem .5rem; border-radius:9999px; font-weight:600;
                          white-space:nowrap; flex-shrink:0; }
   .sc-meta-date        { font-size:.7rem; color:#9ca3af; flex-shrink:0; }
+  .sc-ask-panel        { background:white; border:1px solid #d1d5db; border-radius:.5rem;
+                         padding:1rem 1.25rem; margin-bottom:.75rem; }
+  .sc-form-field       { display:flex; flex-direction:column; gap:.25rem; margin-bottom:.65rem; }
+  .sc-form-label       { font-size:.8rem; font-weight:600; color:#374151; }
+  .sc-form-input       { border:1px solid #d1d5db; border-radius:.3rem; padding:.4rem .6rem;
+                         font-size:.85rem; width:100%; }
+  .sc-form-textarea    { border:1px solid #d1d5db; border-radius:.3rem; padding:.4rem .6rem;
+                         font-size:.85rem; width:100%; resize:vertical; }
 </style>
 
-<h1 class="text-2xl font-bold mb-1">Ask a Mapping Question</h1>
-<p class="text-sm text-gray-500 mb-4">Search approved Mapping guidance. This does not generate new answers.</p>
+<h1 class="text-2xl font-bold mb-1">Mapping Q&amp;A</h1>
+<p class="text-sm text-gray-500 mb-4">
+  Search approved Mapping guidance or submit a new question for senior review.
+</p>
 
-<div class="mb-5 max-w-2xl sc-search-wrapper">
+<div class="max-w-2xl">
 
-  <!-- SEARCH BAR + CLEAR ALL -->
-  <div class="flex gap-2 items-center">
-    <div class="relative flex-1">
+  <!-- SEARCH ROW: input + Clear All + Ask New Question -->
+  <div class="flex gap-2 items-center mb-1">
+    <div class="relative flex-1 sc-search-wrapper">
       <input id="scSearch"
              type="text"
              placeholder="Type a Mapping question or keyword..."
@@ -37,18 +47,63 @@
                    text-gray-500 hover:bg-gray-100 flex-shrink-0">
       Clear All
     </button>
+    <button id="scAskNewBtn"
+            class="whitespace-nowrap text-sm bg-blue-600 text-white rounded px-3 py-2
+                   hover:bg-blue-700 flex-shrink-0">
+      Ask New Question
+    </button>
   </div>
 
   <p class="text-xs text-gray-400 mt-1 mb-3">
     Examples: bad legal, do not create transfer, tract multiple owners
   </p>
 
-  <!-- TOPIC TAG PILLS -->
-  <div id="scTagPills" class="flex flex-wrap gap-1.5 min-h-[2rem]"></div>
+  <!-- COLLAPSIBLE SUBMIT PANEL (shown when Ask New Question is clicked) -->
+  <div id="scAskPanel" style="display:none;" class="sc-ask-panel">
+    <p class="text-xs text-gray-400 mb-3">
+      Your question will be saved for senior technician review and will
+      <strong>not</strong> appear as approved guidance until reviewed and approved.
+    </p>
+    <form id="scSubmitForm" novalidate>
+      <div class="sc-form-field">
+        <label class="sc-form-label" for="scQTitle">
+          Question <span class="text-red-500">*</span>
+        </label>
+        <input id="scQTitle" name="title" type="text" class="sc-form-input"
+               placeholder="Describe the situation or scenario you have a question about..."
+               required autocomplete="off">
+      </div>
+      <div class="sc-form-field">
+        <label class="sc-form-label" for="scQNotes">Additional context (optional)</label>
+        <textarea id="scQNotes" name="notes" class="sc-form-textarea" rows="3"
+                  placeholder="Relevant details, document numbers, or background..."></textarea>
+      </div>
+      <div class="sc-form-field">
+        <label class="sc-form-label" for="scQName">Your name (optional)</label>
+        <input id="scQName" name="submitted_by" type="text" class="sc-form-input"
+               placeholder="Leave blank to submit anonymously" autocomplete="off">
+      </div>
+      <div class="flex items-center gap-3">
+        <button type="submit"
+                class="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700">
+          Submit Question
+        </button>
+        <button type="button" id="scCancelAsk"
+                class="text-sm text-gray-400 hover:text-gray-600">
+          Cancel
+        </button>
+        <div id="scSubmitMsg" class="text-sm"></div>
+      </div>
+    </form>
+  </div>
+
+  <!-- TAG PILLS -->
+  <div id="scTagPills" class="flex flex-wrap gap-1.5 min-h-[2rem] mb-4"></div>
 
 </div>
 
+<!-- APPROVED CARD RESULTS -->
 <div id="scResults" class="space-y-4"></div>
 
-<script src="{{ url_for('static', filename='js/scenario_cards.js') }}?v=4"></script>
+<script src="{{ url_for('static', filename='js/scenario_cards.js') }}?v=5"></script>
 {% endblock %}

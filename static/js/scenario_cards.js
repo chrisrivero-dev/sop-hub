@@ -12,6 +12,9 @@
   const suggestionsEl = document.getElementById("scSuggestions");
   const clearAllBtn   = document.getElementById("scClearAll");
   const tagPillsEl    = document.getElementById("scTagPills");
+  const askNewBtn     = document.getElementById("scAskNewBtn");
+  const askPanel      = document.getElementById("scAskPanel");
+  const cancelAskBtn  = document.getElementById("scCancelAsk");
 
   if (!searchInput || !resultsEl) return;
 
@@ -276,6 +279,87 @@
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => search(q, activeTag), 250);
   });
+
+  // ── ASK PANEL TOGGLE ─────────────────────────────────
+  function openAskPanel() {
+    if (!askPanel) return;
+    askPanel.style.display = "block";
+    if (askNewBtn) { askNewBtn.textContent = "✕ Close"; }
+    document.getElementById("scQTitle")?.focus();
+  }
+
+  function closeAskPanel() {
+    if (!askPanel) return;
+    askPanel.style.display = "none";
+    if (askNewBtn) { askNewBtn.textContent = "Ask New Question"; }
+  }
+
+  if (askNewBtn) {
+    askNewBtn.addEventListener("click", () => {
+      const open = askPanel?.style.display === "block";
+      open ? closeAskPanel() : openAskPanel();
+    });
+  }
+
+  if (cancelAskBtn) {
+    cancelAskBtn.addEventListener("click", closeAskPanel);
+  }
+
+  // ── QUESTION SUBMISSION ───────────────────────────────
+  const submitForm = document.getElementById("scSubmitForm");
+  const submitMsg  = document.getElementById("scSubmitMsg");
+
+  if (submitForm) {
+    submitForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const titleEl = submitForm.querySelector("[name='title']");
+      const title   = titleEl.value.trim();
+      if (!title) { titleEl.focus(); return; }
+
+      const notes       = submitForm.querySelector("[name='notes']").value.trim();
+      const submittedBy = submitForm.querySelector("[name='submitted_by']").value.trim();
+      const submitBtn   = submitForm.querySelector("[type='submit']");
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting…";
+      submitMsg.textContent = "";
+
+      try {
+        const resp = await fetch("/scenario-cards/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, notes, submitted_by: submittedBy }),
+        });
+        const data = await resp.json();
+        if (data.ok) {
+          submitForm.reset();
+          closeAskPanel();
+          // Brief success confirmation near the Ask New Question button
+          if (askNewBtn) {
+            const prev = askNewBtn.textContent;
+            askNewBtn.textContent = "✓ Question submitted";
+            askNewBtn.classList.add("bg-green-600");
+            askNewBtn.classList.remove("bg-blue-600", "hover:bg-blue-700");
+            setTimeout(() => {
+              askNewBtn.textContent = "Ask New Question";
+              askNewBtn.classList.remove("bg-green-600");
+              askNewBtn.classList.add("bg-blue-600", "hover:bg-blue-700");
+            }, 4000);
+          }
+        } else {
+          submitMsg.className = "text-sm text-red-500";
+          submitMsg.textContent = data.error || "Submission failed.";
+        }
+      } catch (err) {
+        submitMsg.className = "text-sm text-red-500";
+        submitMsg.textContent = "Submission failed. Please try again.";
+        console.error("SC SUBMIT ERROR:", err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit Question";
+      }
+    });
+  }
 
   // ── INIT ─────────────────────────────────────────────
   loadTagPills();

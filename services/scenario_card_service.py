@@ -93,6 +93,26 @@ def get_all_cards(status=None, query=None):
     return [_to_dict(c) for c in rows]
 
 
+def submit_question(data):
+    """Public technician submission. Status is forced to needs_review regardless of input."""
+    title = (data.get("title") or "").strip()
+    if not title:
+        return None
+    from extensions import db
+    from models.scenario_card import ScenarioCard
+
+    card = ScenarioCard(
+        title=title,
+        plain_english_answer=(data.get("notes") or "").strip() or None,
+        approved_by=(data.get("submitted_by") or "").strip() or None,
+        status="needs_review",
+        updated_at=datetime.utcnow(),
+    )
+    db.session.add(card)
+    db.session.commit()
+    return _to_dict(card)
+
+
 def create_card(data):
     from extensions import db
     from models.scenario_card import ScenarioCard

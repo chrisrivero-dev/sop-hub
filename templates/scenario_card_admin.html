@@ -44,7 +44,60 @@
       <span class="text-yellow-600 font-semibold">Needs Review</span> cards are hidden from technicians.
     </p>
   </div>
-  <div id="scaStats" class="flex gap-4 text-sm text-gray-500 flex-wrap"></div>
+  <div class="flex items-center gap-3 flex-wrap">
+    <div id="scaStats" class="flex gap-4 text-sm text-gray-500 flex-wrap"></div>
+    <button id="scaAddNewBtn"
+            class="bg-blue-600 text-white text-sm px-4 py-1.5 rounded hover:bg-blue-700 whitespace-nowrap">
+      ＋ Add New Card
+    </button>
+  </div>
+</div>
+
+<!-- ADD NEW CARD PANEL -->
+<div id="scaCreatePanel" style="display:none;"
+     class="border rounded bg-white mb-4 overflow-hidden">
+  <div class="bg-blue-50 border-b px-4 py-2 flex justify-between items-center">
+    <span class="font-semibold text-blue-800 text-sm">New Scenario Card</span>
+    <span class="text-xs text-blue-600">Fields marked * are required. You can edit all fields after saving.</span>
+  </div>
+  <div class="p-4">
+    <div class="sca-field-row">
+      <label class="sca-label">Title <span class="text-red-500">*</span></label>
+      <input type="text" class="sca-input" id="scaNewTitle"
+             placeholder="Question or scenario title…">
+    </div>
+    <div class="sca-field-row">
+      <label class="sca-label">Answer</label>
+      <textarea class="sca-textarea" id="scaNewAnswer" rows="3"
+                placeholder="Approved answer or plain-English guidance…"></textarea>
+    </div>
+    <div class="sca-field-row">
+      <label class="sca-label">What to do</label>
+      <textarea class="sca-textarea" id="scaNewWhatToDo" rows="2"
+                placeholder="Step-by-step action…"></textarea>
+    </div>
+    <div class="sca-field-row">
+      <label class="sca-label">Tags</label>
+      <input type="text" class="sca-input" id="scaNewTags"
+             placeholder="legal, tract, LLA  (comma-separated)">
+    </div>
+    <div class="sca-field-row">
+      <label class="sca-label">Status</label>
+      <select class="sca-input" id="scaNewStatus">
+        <option value="draft">draft</option>
+        <option value="needs_review">needs_review</option>
+        <option value="approved">approved</option>
+      </select>
+    </div>
+    <div class="sca-save-row">
+      <button id="scaSaveNew"
+              class="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700">
+        Save Card
+      </button>
+      <button id="scaCancelNew" class="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
+    </div>
+    <div id="scaCreateMsg" class="text-sm mt-2 text-red-500"></div>
+  </div>
 </div>
 
 <!-- TOOLBAR -->
