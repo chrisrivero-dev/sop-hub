@@ -380,8 +380,101 @@
     });
   }
 
+  // ── PENDING QUEUE ─────────────────────────────────────
+
+  const pendingSection  = document.getElementById("scaPendingSection");
+  const pendingList     = document.getElementById("scaPendingList");
+  const pendingCountEl  = document.getElementById("scaPendingCount");
+
+  function fmtPendingDate(iso) {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } catch { return ""; }
+  }
+
+  function renderPendingCard(q) {
+    const notesHtml = q.notes
+      ? `<div class="sca-pending-notes">Notes: ${esc(q.notes)}</div>`
+      : "";
+    const who = q.submitted_by ? ` · ${esc(q.submitted_by)}` : "";
+    return `
+      <div class="sca-pending-card" id="scaPending-${esc(q.id)}">
+        <div class="flex-1 min-w-0">
+          <div class="sca-pending-q-title">${esc(q.title)}</div>
+          ${notesHtml}
+          <div class="sca-pending-meta">Submitted ${fmtPendingDate(q.submitted_at)}${who}</div>
+        </div>
+        <div class="flex gap-1.5 flex-shrink-0 flex-wrap items-start">
+          <button class="sca-convert-btn" data-pending-id="${esc(q.id)}"
+                  data-title="${esc(q.title)}">Convert to Draft Card</button>
+        </div>
+      </div>`;
+  }
+
+  async function loadPending() {
+    if (!pendingSection) return;
+    try {
+      const resp = await fetch("/scenario-cards/pending");
+      if (resp.status === 403) return; // not editor — silently skip
+      const data = await resp.json();
+      if (!data.ok) return;
+
+      const questions = data.questions || [];
+      if (pendingCountEl) pendingCountEl.textContent = questions.length;
+
+      if (!questions.length) {
+        pendingSection.style.display = "none";
+        return;
+      }
+
+      pendingSection.style.display = "block";
+      if (pendingList) {
+        pendingList.innerHTML = questions.map(renderPendingCard).join("");
+        bindPendingEvents();
+      }
+    } catch (err) {
+      console.error("PENDING LOAD ERROR:", err);
+    }
+  }
+
+  function bindPendingEvents() {
+    if (!pendingList) return;
+
+    pendingList.querySelectorAll(".sca-convert-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id    = btn.dataset.pendingId;
+        const title = btn.dataset.title || "";
+        btn.disabled = true;
+        btn.textContent = "Converting…";
+        try {
+          const resp = await fetch(`/scenario-cards/pending/${encodeURIComponent(id)}/convert`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title }),
+          });
+          const data = await resp.json();
+          if (data.ok) {
+            await loadPending();
+            await load(); // refresh card list — new draft card was created
+          } else {
+            alert(data.error || "Conversion failed.");
+            btn.disabled = false;
+            btn.textContent = "Convert to Draft Card";
+          }
+        } catch (err) {
+          console.error("CONVERT ERROR:", err);
+          btn.disabled = false;
+          btn.textContent = "Convert to Draft Card";
+        }
+      });
+    });
+  }
+
   // ── INIT ─────────────────────────────────────────────
 
   initCreatePanel();
   load();
+  loadPending();
 })();

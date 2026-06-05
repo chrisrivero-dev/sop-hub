@@ -3,12 +3,16 @@ from services.scenario_card_service import (
     search_approved,
     get_approved_tags,
     get_all_cards,
-    submit_question,
     create_card,
     update_card,
     approve_card,
     mark_needs_review_card,
     delete_card,
+)
+from services.pending_question_service import (
+    submit_pending_question,
+    get_pending_questions,
+    mark_processed,
 )
 
 scenario_card_bp = Blueprint("scenario_cards", __name__)
@@ -42,9 +46,12 @@ def search_scenario_cards():
 @scenario_card_bp.post("/scenario-cards/submit")
 def submit_scenario_question():
     data = request.get_json(force=True) or {}
-    result = submit_question(data)
-    if result is None:
-        return jsonify({"ok": False, "error": "Question title is required."}), 400
+    try:
+        submit_pending_question(data)
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except RuntimeError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 503
     return jsonify({"ok": True}), 201
 
 
@@ -106,3 +113,48 @@ def needs_review_scenario_card(card_id):
 def delete_scenario_card(card_id):
     _require_editor()
     return jsonify({"ok": True, **delete_card(card_id)})
+
+
+# ── PENDING QUEUE (editor only) ──────────────────────────────────────────────
+
+@scenario_card_bp.get("/scenario-cards/pending")
+def list_pending_questions():
+    _require_editor()
+    questions = get_pending_questions(include_processed=False)
+    return jsonify({"ok": True, "questions": questions, "count": len(questions)})
+
+
+@scenario_card_bp.post("/scenario-cards/pending/<string:question_id>/convert")
+def convert_pending_question(question_id):
+    _require_editor()
+    data = request.get_json(force=True) or {}
+
+    # Find the pending question first
+    all_pending = get_pending_questions(include_processed=False)
+    question = next((q for q in all_pending if q["id"] == question_id), None)
+    if question is None:
+        return jsonify({"ok": False, "error": "Pending question not found."}), 404
+
+    # Create a draft card from it
+    card_data = {
+        "title":  data.get("title") or question["title"],
+        "plain_english_answer": data.get("plain_english_answer", ""),
+        "what_to_do":           data.get("what_to_do", ""),
+        "tags":                 data.get("tags", ""),
+        "status":               "draft",
+    }
+    if question.get("notes"):
+        card_data["plain_english_answer"] = (
+            card_data["plain_english_answer"] or
+            f"[Submitted notes: {question['notes']}]"
+        )
+
+    card = create_card(card_data)
+
+    # Mark the pending question as processed
+    try:
+        mark_processed(question_id, processed_by=data.get("processed_by"))
+    except RuntimeError:
+        pass  # card was created successfully; non-fatal if mark fails
+
+    return jsonify({"ok": True, "card": card}), 201
