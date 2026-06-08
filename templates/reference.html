@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block content %}
 
 <h1 class="text-2xl font-bold mb-6">Reference Library</h1>
@@ -12,11 +12,11 @@
     </button>
 
     <button id="exportBtn" class="bg-blue-600 text-white px-3 py-2 rounded">
-        â¬‡ Export
+        ⬇ Export
     </button>
 
     <button id="importBtn" class="bg-purple-600 text-white px-3 py-2 rounded">
-        â¬† Import
+        ⬆ Import
     </button>
 </div>
 
@@ -51,14 +51,14 @@
                      data-group="{{ group }}">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-2">
-                            <span class="group-arrow text-gray-500 text-xs">â–¼</span>
+                            <span class="group-arrow text-gray-500 text-xs">▼</span>
                             <span class="font-semibold text-gray-700 text-sm">{{ group }}</span>
                             <span class="text-xs text-gray-400">({{ items|length }})</span>
                         </div>
                         {% if group not in built_in %}
                         <button class="delete-group text-red-400 hover:text-red-600 text-sm"
                                 type="button" data-group-name="{{ group }}">
-                            ðŸ—‘
+                            🗑
                         </button>
                         {% endif %}
                     </div>
@@ -82,7 +82,7 @@
                         <div class="ref-row-summary flex items-center gap-2 px-3 py-2 hover:bg-gray-50">
 
                             <!-- PIN INDICATOR (static, visual only) -->
-                            <span class="text-xl flex-shrink-0 text-yellow-500 select-none">â˜…</span>
+                            <span class="text-xl flex-shrink-0 text-yellow-500 select-none">★</span>
 
                             <!-- DISPLAY NAME (click = open file) -->
                             <span class="ref-display-name flex-1 min-w-0 truncate text-sm text-blue-700 font-medium cursor-pointer hover:underline"
@@ -104,20 +104,20 @@
                             <div class="flex items-center gap-1 flex-shrink-0">
                                 <button type="button" class="preview-ref-btn ref-action-btn"
                                         data-path="{{ item.file_path }}"
-                                        title="Preview file">ðŸ”</button>
+                                        title="Preview file">🔍</button>
 
                                 <button type="button" class="open-folder ref-action-btn"
                                         data-path="{{ item.file_path }}"
-                                        title="Open containing folder">ðŸ“‚</button>
+                                        title="Open containing folder">📂</button>
 <button type="button" class="details-toggle ref-details-btn">
-                                    Details âŒ„
+                                    Details ⌄
                                 </button>
 
                                 <button type="button" class="unpin-btn ref-action-btn text-red-400 hover:text-red-600"
                                         data-id="{{ item.id }}"
                                         data-path="{{ item.file_path }}"
                                         data-name="{{ item.display_name or item.file_name }}"
-                                        title="Remove from Reference Library">âœ•</button>
+                                        title="Remove from Reference Library">✕</button>
                             </div>
 
                         </div>
@@ -196,5 +196,3 @@
 <script src="{{ url_for('static', filename='js/file_guidance.js') }}?v=2"></script>
 
 {% endblock %}
-
-

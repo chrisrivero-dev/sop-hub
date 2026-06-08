@@ -1,5 +1,5 @@
-﻿/* =====================================================
-   REFERENCE LIBRARY â€” BEHAVIOR
+/* =====================================================
+   REFERENCE LIBRARY — BEHAVIOR
    Owns: group collapse, pin/unpin, 
          open-file, open-folder, row-click preview trigger
    Preview functions live in reference_preview.js
@@ -45,13 +45,13 @@ document.addEventListener("DOMContentLoaded", () => {
         groupBody.classList.remove("hidden");
 
         if (arrow) {
-          arrow.textContent = "â–¼";
+          arrow.textContent = "▼";
         }
       } else {
         groupBody.classList.add("hidden");
 
         if (arrow) {
-          arrow.textContent = "â–¶";
+          arrow.textContent = "▶";
         }
       }
     });
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("click", async (e) => {
 
     // =========================
-    // DISPLAY NAME â†’ OPEN FILE (single click)
+    // DISPLAY NAME → OPEN FILE (single click)
     // =========================
     const nameSpan = e.target.closest(".ref-display-name");
     if (nameSpan) {
@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================
-    // PREVIEW BUTTON (ðŸ”)
+    // PREVIEW BUTTON (🔍)
     // =========================
     const previewBtn = e.target.closest(".preview-ref-btn");
     if (previewBtn) {
@@ -188,13 +188,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (detail) {
         const opening = detail.classList.contains("hidden");
         detail.classList.toggle("hidden");
-        detailsBtn.textContent = opening ? "Details âŒƒ" : "Details âŒ„";
+        detailsBtn.textContent = opening ? "Details ⌃" : "Details ⌄";
       }
       return;
     }
 
     // =========================
-    // ROW CLICK â†’ PREVIEW (non-button, non-name areas)
+    // ROW CLICK → PREVIEW (non-button, non-name areas)
     // =========================
     const row = e.target.closest(".ref-row");
 
@@ -381,5 +381,3 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
-
-
