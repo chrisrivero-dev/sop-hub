@@ -6,7 +6,7 @@
 ===================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("REFERENCE_JS_LOADED_V20010");
+  console.log("REFERENCE_JS_LOADED_V20013");
 
   // =========================
   // HTML ESCAPE HELPER
@@ -61,49 +61,60 @@ document.addEventListener("DOMContentLoaded", () => {
   // GLOBAL CLICK HANDLER
   // =========================
   document.addEventListener("click", async (e) => {
-    // =========================
-    // PIN / UNPIN
-    // =========================
-    const pinBtn = e.target.closest(".pin-star");
 
-    if (pinBtn) {
-      const fileName = pinBtn.dataset.name;
-      const filePath = pinBtn.dataset.path;
+    // =========================
+    // DISPLAY NAME → OPEN FILE (single click)
+    // =========================
+    const nameSpan = e.target.closest(".ref-display-name");
+    if (nameSpan) {
+      const path = nameSpan.dataset.path;
+      if (path) {
+        try { await fetch(`/open-file?path=${encodeURIComponent(path)}`); }
+        catch (err) { console.error("NAME OPEN ERROR:", err); }
+      }
+      return; // Don't fall through to row-click preview
+    }
+
+    // =========================
+    // PREVIEW BUTTON (🔍)
+    // =========================
+    const previewBtn = e.target.closest(".preview-ref-btn");
+    if (previewBtn) {
+      const path = previewBtn.dataset.path;
+      if (path) window.loadReferencePreview?.(path);
+      return;
+    }
+
+    // =========================
+    // UNPIN (far-right button with confirmation)
+    // =========================
+    const unpinBtn = e.target.closest(".unpin-btn");
+
+    if (unpinBtn) {
+      const name = unpinBtn.dataset.name || "this file";
+      if (!confirm(`Remove "${name}" from Reference Library?`)) return;
+
+      const filePath = unpinBtn.dataset.path;
+      const fileName = unpinBtn.dataset.name;
 
       if (!filePath) return;
 
       try {
         const resp = await fetch("/toggle-pin", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            file_name: fileName,
-            file_path: filePath,
-            folder: "",
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ file_name: fileName, file_path: filePath, folder: "" }),
         });
-
         const data = await resp.json();
 
-        if (!data.success) {
-          console.error("toggle-pin failed:", data);
-          return;
-        }
-
-        if (data.pinned) {
-          pinBtn.textContent = "★";
-          pinBtn.classList.add("text-yellow-500");
-        } else {
-          pinBtn.textContent = "☆";
-          pinBtn.classList.remove("text-yellow-500");
-
-          const row = pinBtn.closest(".ref-row");
+        if (data.success) {
+          const row = unpinBtn.closest(".ref-row");
           if (row) row.remove();
+        } else {
+          console.error("unpin failed:", data);
         }
       } catch (err) {
-        console.error("PIN ERROR:", err);
+        console.error("UNPIN ERROR:", err);
       }
 
       return;
@@ -258,16 +269,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================
-    // ROW CLICK → PREVIEW
+    // ROW CLICK → PREVIEW (non-button, non-name areas)
     // =========================
     const row = e.target.closest(".ref-row");
 
     if (row) {
-      const path = row.querySelector(".open-file")?.dataset.path;
-
-      if (path) {
-        window.loadReferencePreview?.(path);
-      }
+      const path = row.querySelector(".ref-display-name")?.dataset.path;
+      if (path) window.loadReferencePreview?.(path);
     }
 
     // =========================
@@ -422,6 +430,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // =========================
+  // GROUP BADGE SYNC
+  // =========================
+  document.querySelectorAll(".group-select").forEach((select) => {
+    select.addEventListener("change", () => {
+      const row = select.closest(".ref-row");
+      const badge = row?.querySelector(".ref-group-badge");
+      if (badge) badge.textContent = select.value;
+    });
+  });
 
   // =========================
   // NOTES PREVIEW SYNC
@@ -436,4 +454,5 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+
 });

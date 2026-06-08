@@ -81,29 +81,30 @@
                         <!-- COLLAPSED SUMMARY ROW -->
                         <div class="ref-row-summary flex items-center gap-2 px-3 py-2 hover:bg-gray-50">
 
-                            <!-- PIN -->
-                            <span class="pin-star cursor-pointer text-xl flex-shrink-0 {{ 'text-yellow-500' if item.pinned else 'text-gray-300' }}"
-                                  data-id="{{ item.id }}"
-                                  data-name="{{ item.file_name }}"
-                                  data-path="{{ item.file_path }}"
-                                  data-folder="{{ item.folder or '' }}">
-                                {{ "★" if item.pinned else "☆" }}
-                            </span>
+                            <!-- PIN INDICATOR (static, visual only) -->
+                            <span class="text-xl flex-shrink-0 text-yellow-500 select-none">★</span>
 
-                            <!-- DISPLAY NAME (editable inline) -->
-                            <input class="display-input ref-display-name flex-1 min-w-0"
-                                   data-id="{{ item.id }}"
-                                   value="{{ item.display_name or item.file_name }}"
-                                   title="{{ item.file_path }}">
+                            <!-- DISPLAY NAME (click = open file) -->
+                            <span class="ref-display-name flex-1 min-w-0 truncate text-sm text-blue-700 font-medium cursor-pointer hover:underline"
+                                  data-path="{{ item.file_path }}"
+                                  title="Click to open: {{ item.file_path }}">{{ item.display_name or item.file_name }}</span>
+
+                            <!-- FILE GUIDANCE STATUS PILL (populated by file_guidance.js) -->
+                            <span class="fg-status-pill"
+                                  data-fg-path="{{ item.file_path }}"
+                                  style="display:none"></span>
+
+                            <!-- GROUP BADGE (read-only) -->
+                            <span class="ref-group-badge">{{ item.group or 'Ungrouped' }}</span>
 
                             <!-- NOTES PREVIEW (read-only, first line) -->
                             <span class="ref-notes-preview hidden xl:block">{{ notes_preview }}</span>
 
                             <!-- ACTION BUTTONS -->
                             <div class="flex items-center gap-1 flex-shrink-0">
-                                <button type="button" class="open-file ref-action-btn"
+                                <button type="button" class="preview-ref-btn ref-action-btn"
                                         data-path="{{ item.file_path }}"
-                                        title="Open original file">📄</button>
+                                        title="Preview file">🔍</button>
 
                                 <button type="button" class="open-folder ref-action-btn"
                                         data-path="{{ item.file_path }}"
@@ -118,6 +119,12 @@
                                 <button type="button" class="details-toggle ref-details-btn">
                                     Details ⌄
                                 </button>
+
+                                <button type="button" class="unpin-btn ref-action-btn text-red-400 hover:text-red-600"
+                                        data-id="{{ item.id }}"
+                                        data-path="{{ item.file_path }}"
+                                        data-name="{{ item.display_name or item.file_name }}"
+                                        title="Remove from Reference Library">✕</button>
                             </div>
 
                         </div>
@@ -148,6 +155,10 @@
                                               rows="3"
                                               placeholder="Add your notes here...">{{ item.notes or '' }}</textarea>
                                 </div>
+
+                                <!-- FILE GUIDANCE SECTION (rendered by file_guidance.js) -->
+                                <div class="fg-section"
+                                     data-fg-path="{{ item.file_path }}"></div>
 
                                 <!-- FILE INFO -->
                                 <div class="text-xs text-gray-400 space-y-0.5">
@@ -186,8 +197,9 @@
 
 {% endif %}
 
-<script src="{{ url_for('static', filename='js/reference_preview.js') }}?v=1"></script>
-<script src="{{ url_for('static', filename='js/reference.js') }}?v=20014"></script>
-<script src="{{ url_for('static', filename='js/reference_autosave.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/reference_preview.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/reference.js') }}?v=20013"></script>
+<script src="{{ url_for('static', filename='js/reference_autosave.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/file_guidance.js') }}?v=2"></script>
 
 {% endblock %}
