@@ -1,6 +1,6 @@
-/* =====================================================
-   REFERENCE LIBRARY — BEHAVIOR
-   Owns: group collapse, pin/unpin, copy-workspace,
+﻿/* =====================================================
+   REFERENCE LIBRARY â€” BEHAVIOR
+   Owns: group collapse, pin/unpin, 
          open-file, open-folder, row-click preview trigger
    Preview functions live in reference_preview.js
 ===================================================== */
@@ -45,13 +45,13 @@ document.addEventListener("DOMContentLoaded", () => {
         groupBody.classList.remove("hidden");
 
         if (arrow) {
-          arrow.textContent = "▼";
+          arrow.textContent = "â–¼";
         }
       } else {
         groupBody.classList.add("hidden");
 
         if (arrow) {
-          arrow.textContent = "▶";
+          arrow.textContent = "â–¶";
         }
       }
     });
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("click", async (e) => {
 
     // =========================
-    // DISPLAY NAME → OPEN FILE (single click)
+    // DISPLAY NAME â†’ OPEN FILE (single click)
     // =========================
     const nameSpan = e.target.closest(".ref-display-name");
     if (nameSpan) {
@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================
-    // PREVIEW BUTTON (🔍)
+    // PREVIEW BUTTON (ðŸ”)
     // =========================
     const previewBtn = e.target.closest(".preview-ref-btn");
     if (previewBtn) {
@@ -119,81 +119,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       return;
     }
-
-    // =========================
-    // COPY TO WORKSPACE
-    // =========================
-    const copyBtn = e.target.closest(".copy-workspace");
-
-    if (copyBtn) {
-      if (copyBtn.dataset.busy === "true") {
-        return;
-      }
-
-      copyBtn.dataset.busy = "true";
-      copyBtn.disabled = true;
-
-      const filePath = copyBtn.dataset.path;
-      const groupName = copyBtn.dataset.group || "Ungrouped";
-
-      if (!filePath) {
-        console.error("COPY ERROR: missing file path");
-        copyBtn.dataset.busy = "false";
-        copyBtn.disabled = false;
-        return;
-      }
-
-      const originalText = copyBtn.textContent;
-
-      try {
-        copyBtn.textContent = "⏳";
-
-        const resp = await fetch("/copy-to-workspace", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            file_path: filePath,
-            group: groupName,
-          }),
-        });
-
-        const data = await resp.json();
-
-        console.log("COPY TO WORKSPACE RESPONSE:", data);
-
-        if (!data.success) {
-          copyBtn.textContent = "⚠";
-          copyBtn.title = data.message || "Copy failed";
-          copyBtn.dataset.busy = "false";
-          copyBtn.disabled = false;
-          return;
-        }
-
-        if (data.copied) {
-          copyBtn.textContent = "✅";
-          copyBtn.title = "Copied to workspace";
-        } else {
-          copyBtn.textContent = "✔";
-          copyBtn.title = "Already exists in workspace";
-        }
-
-        setTimeout(() => {
-          copyBtn.textContent = originalText;
-          copyBtn.dataset.busy = "false";
-          copyBtn.disabled = false;
-        }, 2000);
-      } catch (err) {
-        console.error("COPY TO WORKSPACE ERROR:", err);
-        copyBtn.textContent = "⚠";
-        copyBtn.dataset.busy = "false";
-        copyBtn.disabled = false;
-      }
-
-      return;
-    }
-
     // =========================
     // OPEN ORIGINAL FROM PREVIEW PANEL
     // =========================
@@ -263,13 +188,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (detail) {
         const opening = detail.classList.contains("hidden");
         detail.classList.toggle("hidden");
-        detailsBtn.textContent = opening ? "Details ⌃" : "Details ⌄";
+        detailsBtn.textContent = opening ? "Details âŒƒ" : "Details âŒ„";
       }
       return;
     }
 
     // =========================
-    // ROW CLICK → PREVIEW (non-button, non-name areas)
+    // ROW CLICK â†’ PREVIEW (non-button, non-name areas)
     // =========================
     const row = e.target.closest(".ref-row");
 
@@ -456,3 +381,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
+
+
