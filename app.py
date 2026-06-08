@@ -1,5 +1,5 @@
-print("🔥 REAL APP.PY LOADED FROM:", __file__)
-print("🔥 RUNNING APP.PY FROM:", __file__)
+﻿print("ðŸ”¥ REAL APP.PY LOADED FROM:", __file__)
+print("ðŸ”¥ RUNNING APP.PY FROM:", __file__)
 
 # ======================================================
 # IMPORTS
@@ -40,7 +40,7 @@ def load_excel_examples(query):
     try:
         excel_path = os.path.join(BASE_DIR, EXCEL_FILENAME)
 
-        print("📂 LOOKING FOR EXCEL AT:", excel_path)
+        print("ðŸ“‚ LOOKING FOR EXCEL AT:", excel_path)
 
         if not os.path.exists(excel_path):
             print(f"[ERROR] Excel file NOT FOUND at: {excel_path}")
@@ -185,17 +185,18 @@ def preview_file():
 Q_DRIVE_ROOTS = [
     r"Q:\WORD",
     r"Q:\Excel Files",
-    r"Q:\Mapping Reference Workspace"
+    r"Q:\Mapping Reference Workspace",
+    r"Q:\VATCHE - INSTRUCTONS, PROCEDURES AND CUT GUIDES",
 ]
 
 # ======================================================
-# FLASK SETUP — SUPPORTS BOTH DEV AND ONE-FILE EXE
+# FLASK SETUP â€” SUPPORTS BOTH DEV AND ONE-FILE EXE
 # ======================================================
 if hasattr(sys, "_MEIPASS"):
-    # EXE MODE — resources extracted into temp folder
+    # EXE MODE â€” resources extracted into temp folder
     BASE_DIR = sys._MEIPASS
 else:
-    # DEV MODE — normal folder with app.py
+    # DEV MODE â€” normal folder with app.py
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 template_dir = os.path.join(BASE_DIR, "templates")
@@ -219,14 +220,14 @@ INSTANCE_DIR = root / "instance"
 INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
 
 DB_PATH = INSTANCE_DIR / "sop.db"
-print(f"🔥 SOP DB PATH: {DB_PATH}")
+print(f"ðŸ”¥ SOP DB PATH: {DB_PATH}")
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 
 
 db.init_app(app)
 migrate.init_app(app, db)
-from models.file_guidance import FileGuidance      # noqa: F401 — Flask-Migrate discovery
-from models.scenario_card import ScenarioCard      # noqa: F401 — Flask-Migrate discovery
+from models.file_guidance import FileGuidance      # noqa: F401 â€” Flask-Migrate discovery
+from models.scenario_card import ScenarioCard      # noqa: F401 â€” Flask-Migrate discovery
 
 import os as _os
 app.config.setdefault(
@@ -341,7 +342,7 @@ def create_shortcut_once():
         sc.IconLocation = exe_path
         sc.save()
 
-        print("📌 Desktop shortcut created.")
+        print("ðŸ“Œ Desktop shortcut created.")
     except Exception as e:
         print("Shortcut creation error:", e)
 
@@ -397,7 +398,7 @@ def extract_text(filepath):
         except Exception:
             return ""
 
-    # ✔ allow .doc files (filename only; no text reading)
+    # âœ” allow .doc files (filename only; no text reading)
     if ext == "doc":
         return ""
 
@@ -530,7 +531,7 @@ def run_search(query, mode="filename"):
         return ranked_results
 
     # 2) FALLBACK SLOW SEARCH
-    print("⚠️ No indexed records found — using slow filesystem search")
+    print("âš ï¸ No indexed records found â€” using slow filesystem search")
     return run_slow_search(query, mode)
 
 
@@ -598,7 +599,7 @@ def run_slow_search(query, mode="filename"):
 
 @app.route("/__crash_test")
 def __crash_test():
-    raise RuntimeError("CRASH TEST — IF YOU SEE THIS, DEBUGGER WORKS")
+    raise RuntimeError("CRASH TEST â€” IF YOU SEE THIS, DEBUGGER WORKS")
 
 # ======================================================
 # TOGGLE PIN (FINAL, SAFE, IDEMPOTENT)
@@ -716,7 +717,7 @@ def toggle_pin():
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        print("💥 toggle-pin ERROR:", e)
+        print("ðŸ’¥ toggle-pin ERROR:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 # ======================================================
@@ -735,10 +736,10 @@ def extract_text_for_indexer(path):
 
 
 def index_qdrive_files():
-    print("⚡ REINDEX STARTED")
+    print("âš¡ REINDEX STARTED")
 
     for root in Q_DRIVE_ROOTS:
-        print("📁 Scanning:", root)
+        print("ðŸ“ Scanning:", root)
 
         for dirpath, dirnames, filenames in os.walk(root):
             for fname in filenames:
@@ -748,7 +749,17 @@ def index_qdrive_files():
                     continue
 
                 full_path = os.path.join(dirpath, fname)
-                stat = os.stat(full_path)
+
+                try:
+                    if not os.path.exists(full_path):
+                        print("⚠️ Skipping missing file:", full_path)
+                        continue
+
+                    stat = os.stat(full_path)
+
+                except OSError as e:
+                    print("⚠️ Skipping inaccessible file:", full_path, e)
+                    continue
 
                 mtime = datetime.fromtimestamp(stat.st_mtime)
                 _, ext = os.path.splitext(fname)
@@ -797,7 +808,7 @@ def index_qdrive_files():
                     db.session.add(rec)
 
     db.session.commit()
-    print("✅ REINDEX COMPLETE")
+    print("âœ… REINDEX COMPLETE")
 
 
 @app.route("/admin/reindex-qdrive")
@@ -825,13 +836,13 @@ def auto_index_if_needed():
     Techs must click "Rebuild File Index" in the Search Hub.
     This keeps first-time behavior consistent (yellow banner).
     """
-    print("🔕 auto_index_if_needed(): skipped (manual indexing only).")
+    print("ðŸ”• auto_index_if_needed(): skipped (manual indexing only).")
     return
 
 
 
 # ======================================================
-# BROWSER LAUNCH — ONE TAB ONLY
+# BROWSER LAUNCH â€” ONE TAB ONLY
 # ======================================================
 
 import webbrowser
@@ -868,7 +879,7 @@ def is_index_empty():
             return True
 @app.route("/ping")
 def ping():
-    print("🔥 PING HIT")
+    print("ðŸ”¥ PING HIT")
     return "pong"
 @app.route("/search", methods=["POST"])
 def search():
@@ -892,8 +903,8 @@ def search():
         if not examples:
             examples = load_excel_examples("")  # load ALL rows
 
-        print("🔥 RESULTS:", len(results))
-        print("🔥 EXAMPLES:", len(examples))
+        print("ðŸ”¥ RESULTS:", len(results))
+        print("ðŸ”¥ EXAMPLES:", len(examples))
 
         return jsonify({
             "results": results,
@@ -902,7 +913,7 @@ def search():
         })
 
     except Exception as e:
-        print("🔥 SEARCH CRASH:", repr(e))
+        print("ðŸ”¥ SEARCH CRASH:", repr(e))
         return jsonify({
             "results": [],
             "examples": [],
@@ -927,7 +938,7 @@ def reindex():
 
         return jsonify({"success": True})
     except Exception as e:
-        print("❌ Reindex error:", e)
+        print("âŒ Reindex error:", e)
         return jsonify({"success": False, "error": str(e)})
 
 
@@ -996,7 +1007,7 @@ def update_reference_field(ref_id):
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        print("💥 update_reference_field ERROR:", e)
+        print("ðŸ’¥ update_reference_field ERROR:", e)
 
         return jsonify({
             "success": False,
@@ -1014,7 +1025,7 @@ def copy_to_workspace():
         group_name=group_name
     )
 
-    print("📥 COPY TO WORKSPACE:", result)
+    print("ðŸ“¥ COPY TO WORKSPACE:", result)
 
     status_code = 200 if result.get("success") else 400
 
@@ -1038,7 +1049,7 @@ def reference_library():
     # 3. Load custom groups from DB
     groups = CustomGroup.query.order_by(CustomGroup.name.asc()).all()
 
-    # 4. Build map: group name → ID
+    # 4. Build map: group name â†’ ID
     group_ids = {g.name: g.id for g in groups}
 
     # 5. Built-in group names
@@ -1114,7 +1125,7 @@ def delete_group(group_name):
 
     except Exception as e:
         db.session.rollback()
-        print("❌ Error deleting group:", e)
+        print("âŒ Error deleting group:", e)
         return jsonify({"error": "server error"}), 500
 
 
@@ -1271,7 +1282,7 @@ if __name__ == "__main__":
     launch_browser_once()
     app.run(
         host="127.0.0.1",
-        port=5050,  # CHANGED FROM 5000 → 5050
+        port=5050,  # CHANGED FROM 5000 â†’ 5050
         debug=True,
         use_reloader=False
     )
